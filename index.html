@@ -404,7 +404,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-T1KXRYCEQF"
 };
 let fbDb = null;
-let FIREBASE_ENABLED = false;
+let FIREBASE_ENABLED = true;
 try {
   if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
     firebase.initializeApp(FIREBASE_CONFIG);
