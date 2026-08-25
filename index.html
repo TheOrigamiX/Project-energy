@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>⚡ VoltRush: บริหารพลังงานแบบสบายๆ</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif;
+    background: radial-gradient(circle at top, #1b2340 0%, #0a0e1a 70%);
+    color: #e6ecf7; overflow-x: hidden; overflow-y: auto;
+  }
+  .screen { display: flex; flex-direction: column; align-items: center; min-height: 100vh; height: auto; padding: 16px; }
+  .hidden { display: none !important; }
+
+  .start-card {
+    background: rgba(20, 28, 50, 0.92); border: 1px solid rgba(120, 160, 255, 0.25); border-radius: 20px;
+    padding: 26px 30px; max-width: 680px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center; margin: auto;
+  }
+  .start-card h1 { font-size: 1.7rem; margin-bottom: 4px; background: linear-gradient(90deg, #ffd166, #ff6b6b, #38b6ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .start-card p.subtitle { color: #9fb3d1; margin-top: 0; margin-bottom: 14px; font-size: 0.86rem; }
+  .rules-box { text-align: left; background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px 18px; margin-bottom: 14px; font-size: 0.82rem; line-height: 1.5; }
+  .rules-box h3 { margin-top: 0; color: #ffd166; font-size: 0.9rem; }
+  .rules-box ul { margin: 0; padding-left: 20px; }
+  .plant-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 14px; }
+  .legend-chip { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.06); padding: 5px 10px; border-radius: 20px; font-size: 0.68rem; }
+
+  .duration-select { margin-bottom: 14px; }
+  .duration-label { font-size: 0.84rem; color: #9fb3d1; margin-bottom: 7px; }
+  .duration-options { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+  .dur-btn { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); color: #e6ecf7; padding: 7px 15px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+  .dur-btn.selected { background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; border-color: transparent; }
+
+  .start-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  button.primary-btn { background: linear-gradient(135deg, #ffd166, #ff7b54); border: none; padding: 12px 36px; border-radius: 30px; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; color: #1a1208; box-shadow: 0 6px 18px rgba(255, 140, 80, 0.35); transition: transform .15s ease; }
+  button.primary-btn:hover { transform: translateY(-2px) scale(1.03); }
+  button.secondary-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: #e6ecf7; padding: 9px 22px; border-radius: 24px; font-size: 0.88rem; cursor: pointer; margin: 0; }
+
+  #countdownScreen { justify-content: center; }
+  .countdown-num { font-size: 7rem; font-weight: 900; color: #ffd166; text-shadow: 0 0 40px rgba(255, 209, 102, 0.6); margin: auto; }
+  @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+  #gameScreen.screen { padding: 10px; align-items: center; }
+  #gameShell { display: flex; flex-direction: column; width: 100%; max-width: 1180px; gap: 8px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: rgba(14, 20, 38, 0.85); border: 1px solid rgba(120,160,255,0.15); padding: 9px 16px; border-radius: 14px; }
+  .timer-block { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .timer-block .clock-icon { font-size: 1.2rem; }
+  .main-timer-bar { position: relative; width: 150px; height: 28px; background: #13210f; border: 2px solid #0a1509; border-radius: 18px; overflow: hidden; flex-shrink: 0; }
+  .main-timer-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(180deg, #ffe08a, #ffb347); transition: width 1s linear; }
+  .main-timer-fill.infinite { width: 100% !important; animation: pulseBg 1.6s infinite; }
+  .main-timer-fill.prep { background: linear-gradient(180deg, #9fe3ff, #38b6ff); }
+  .main-timer-badge { position: relative; z-index: 2; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #1a1208; font-size: 0.82rem; }
+  .env-indicators { display: flex; gap: 8px; font-size: 0.86rem; align-items: center; flex-wrap: wrap; }
+  .env-chip { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 20px; transition: background .3s, transform .3s; }
+  #scoreTopVal { font-size: 1.15rem; font-weight: 800; color: #7bdff2; }
+  #moneyVal, #moneyValPanel { font-size: 1.02rem; font-weight: 800; color: #ffd166; }
+  #stopBtn, #skipPrepBtn { padding: 6px 14px; font-size: 0.78rem; }
+
+  .money-flash-success { animation: moneyPulseGood .5s ease; }
+  .money-flash-fail { animation: moneyShakeBad .4s ease; }
+  @keyframes moneyPulseGood { 0% { background: rgba(255,255,255,0.05); transform: scale(1); } 50% { background: rgba(110,231,168,0.4); transform: scale(1.1); } 100% { background: rgba(255,255,255,0.05); transform: scale(1); } }
+  @keyframes moneyShakeBad { 0%, 100% { transform: translateX(0); background: rgba(255,255,255,0.05); } 25% { transform: translateX(-4px); background: rgba(255,107,107,0.3); } 75% { transform: translateX(4px); background: rgba(255,107,107,0.3); } }
+
+  .status-panel { padding: 8px 14px; }
+  .status-panel h3 { margin-bottom: 6px; }
+  .status-tray { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-height: 58px; }
+  .status-badge {
+    position: relative; min-width: 68px; height: 54px; padding: 5px 9px; border-radius: 14px; border: 3px solid var(--badge-border);
+    background: var(--badge-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    cursor: pointer; flex-shrink: 0; transition: transform .15s ease;
+  }
+  .status-badge:hover { transform: translateY(-2px); }
+  .status-badge.warning { --badge-border: #ffd166; --badge-bg: linear-gradient(135deg,#3a2f10,#241c08); }
+  .status-badge.info { --badge-border: #38b6ff; --badge-bg: linear-gradient(135deg,#0f2a3a,#0a1c28); }
+  .status-badge.danger { --badge-border: #ff6b6b; --badge-bg: linear-gradient(135deg,#3a1010,#280a0a); }
+  .status-badge.buff { --badge-border: #6ee7a8; --badge-bg: linear-gradient(135deg,#123a24,#0a2416); }
+  .status-badge.pulse { animation: pulseBg 1s infinite; }
+  @keyframes pulseBg { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  .status-badge .t-row { font-size: 1.05rem; white-space: nowrap; }
+  .status-badge .arrow { font-size: 0.72rem; opacity: 0.75; margin: 0 1px; }
+  .status-badge .t-count { font-size: 0.6rem; font-weight: 800; color: #fff; opacity: 0.85; white-space: nowrap; }
+  .status-empty { color: #5f7295; font-size: 0.8rem; }
+
+  #toastContainer { position: fixed; bottom: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column-reverse; gap: 8px; width: min(88vw, 380px); align-items: stretch; }
+  .toast { background: rgba(18, 26, 48, 0.98); border: 1px solid rgba(120,160,255,0.35); border-left: 5px solid #ffd166; padding: 12px 16px; border-radius: 12px; font-size: 0.84rem; line-height: 1.4; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: toastIn .3s ease, toastOut .4s ease 5.6s forwards; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(14px); } }
+
+  .main-grid { display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 10px; align-items: start; }
+  @media (max-width: 880px) { .main-grid { grid-template-columns: 1fr; } }
+
+  .panel { background: rgba(14, 20, 38, 0.8); border: 1px solid rgba(120,160,255,0.15); border-radius: 16px; padding: 12px 14px; }
+  .panel h3 { margin-top: 0; margin-bottom: 4px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: #9fb3d1; }
+  .panel-hint { font-size: 0.68rem; color: #6f83a8; margin: 0 0 8px; }
+  .plants-money-bar { background: linear-gradient(135deg, rgba(255,209,102,0.16), rgba(255,123,84,0.1)); border: 1px solid rgba(255,209,102,0.35); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; text-align: center; font-size: 0.88rem; font-weight: 700; color: #ffd166; }
+  .panel-scroll { max-height: 48vh; overflow-y: auto; padding-right: 4px; }
+
+  #plantsContainer { display: grid; grid-template-columns: 1fr; gap: 7px; }
+  .plant-card { display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 8px 10px; transition: all .25s ease; }
+  .plant-card.active { border-color: var(--accent); background: rgba(255,255,255,0.09); box-shadow: 0 0 14px var(--accent-glow); }
+  .plant-card.locked { opacity: 0.68; }
+  .plant-card.cooldown { opacity: 0.78; border-color: #ffb347 !important; }
+  .card-top, .card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .plant-card .info { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .plant-card .icon { font-size: 1.5rem; flex-shrink: 0; }
+  .plant-card .name { font-weight: 700; font-size: 0.82rem; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+  .plant-card .output { font-size: 0.7rem; color: #9fb3d1; }
+  .plant-card .output b { color: #ffd166; }
+  .money-tag { color: #6ee7a8; font-weight: 800; margin-left: 4px; }
+  .level-tag { font-size: 0.6rem; background: rgba(255,209,102,.18); color: #ffd166; padding: 1px 6px; border-radius: 8px; font-weight: 800; }
+  .risk-tag { font-size: 0.58rem; background: rgba(255,107,107,.18); color: #ff9d9d; padding: 1px 6px; border-radius: 8px; font-weight: 800; }
+  .debuff-tag { font-size: 0.58rem; background: rgba(255,209,102,.18); color: #ffd166; padding: 1px 6px; border-radius: 8px; font-weight: 800; }
+  .repair-text { color: #ffb347; font-weight: 800; font-size: 0.72rem; }
+
+  .card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .info-btn { width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer; font-weight: 900; font-size: 0.74rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,0.15); color: #e6ecf7; font-style: italic; font-family: Georgia, serif; }
+  .info-btn:hover { background: rgba(255,255,255,0.28); }
+  .upgrade-btn { padding: 6px 11px; border-radius: 14px; border: none; cursor: pointer; font-weight: 800; font-size: 0.68rem; white-space: nowrap; background: rgba(110,231,168,0.22); color: #6ee7a8; }
+  .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .buy-btn { padding: 6px 13px; border-radius: 20px; border: none; cursor: pointer; font-weight: 700; font-size: 0.72rem; white-space: nowrap; background: linear-gradient(135deg, #ffd166, #ff7b54); color: #1a1208; }
+  .buy-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .switch { position: relative; width: 44px; height: 24px; border-radius: 16px; background: rgba(255,255,255,0.16); transition: background .25s ease; flex-shrink: 0; cursor: pointer; }
+  .switch.on { background: var(--accent); }
+  .switch .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .25s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.35); }
+  .switch.on .knob { left: 23px; }
+
+  .battery-card { background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 8px 10px; grid-column: 1 / -1; }
+  .battery-card.charging { border-color: #6ee7a8; box-shadow: 0 0 14px rgba(110,231,168,.4); }
+  .battery-card.discharging { border-color: #ffd166; box-shadow: 0 0 14px rgba(255,209,102,.4); }
+  .battery-card.locked { opacity: 0.68; }
+  .battery-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; }
+  .battery-bar-track { width: 100%; height: 11px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+  .battery-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#38b6ff,#6ee7a8); transition: width .8s ease; }
+  .battery-controls { display: flex; gap: 14px; flex-wrap: wrap; }
+  .battery-toggle-row { display: flex; align-items: center; gap: 7px; font-size: 0.74rem; }
+
+  @media (min-width: 500px) { #plantsContainer { grid-template-columns: 1fr 1fr; } }
+
+  /* Tighter phone / portrait layout */
+  @media (max-width: 480px) {
+    .start-card { padding: 20px 18px; }
+    .start-card h1 { font-size: 1.4rem; }
+    .start-card p.subtitle { font-size: 0.8rem; }
+    .legend-chip { font-size: 0.62rem; padding: 4px 8px; }
+    .dur-btn { font-size: 0.76rem; padding: 6px 12px; }
+    .top-bar { padding: 8px 10px; gap: 6px; }
+    .main-timer-bar { width: 118px; height: 26px; }
+    .main-timer-badge { font-size: 0.74rem; }
+    .env-chip { padding: 4px 8px; font-size: 0.78rem; }
+    #scoreTopVal { font-size: 1.02rem; }
+    .status-badge { min-width: 58px; height: 48px; padding: 4px 6px; }
+    .status-badge .t-row { font-size: 0.92rem; }
+    .panel { padding: 10px 11px; }
+    .panel-scroll { max-height: 42vh; }
+    .power-gauge { width: 108px; height: 108px; }
+    .power-gauge-pct { font-size: 1.15rem; }
+    .plant-card .name { font-size: 0.78rem; }
+    .plant-card .icon { font-size: 1.35rem; }
+    .modal-card { padding: 18px 18px; }
+  }
+
+  .city-visual { height: 74px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; font-size: 1.7rem; border-radius: 12px; background: linear-gradient(to bottom, #1b2c52, #0d1424); margin-bottom: 8px; padding: 6px; transition: filter .4s ease; }
+  .city-visual.night { background: linear-gradient(to bottom, #0a0e22, #04060f); }
+  .city-visual.blackout { filter: grayscale(1) brightness(0.35); animation: flicker 1.2s infinite; }
+  @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .city-level-label { text-align: center; font-size: 0.85rem; color: #ffd166; font-weight: 800; margin-bottom: 6px; }
+  .city-stats-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
+  .city-stat-chip { background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 14px; font-size: 0.7rem; font-weight: 700; color: #c8d4ec; }
+  #gridEffChip.good { color: #6ee7a8; background: rgba(110,231,168,0.12); }
+  #gridEffChip.bad { color: #ff9d9d; background: rgba(255,107,107,0.12); }
+  .city-progress-label { text-align: center; font-size: 0.68rem; color: #6f83a8; margin-top: 8px; margin-bottom: 4px; }
+  .city-progress-track { width: 100%; height: 9px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .city-progress-fill { height: 100%; background: linear-gradient(90deg, #ffd166, #ff7b54); transition: width .6s ease; }
+
+  .gauge-section { text-align: center; margin-bottom: 8px; }
+  .power-gauge {
+    width: 130px; height: 130px; border-radius: 50%; margin: 0 auto 8px; position: relative;
+    background: conic-gradient(var(--gauge-color) calc(var(--gauge-pct)*1%), rgba(255,255,255,0.08) 0);
+    display: flex; align-items: center; justify-content: center; transition: background 0.6s ease;
+  }
+  .power-gauge::before { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: #141b2e; }
+  .power-gauge-inner { position: relative; z-index: 2; text-align: center; }
+  .power-gauge-pct { font-size: 1.35rem; font-weight: 900; }
+  .power-gauge-label { font-size: 0.65rem; color: #9fb3d1; }
+  .gauge-substats { display: flex; justify-content: center; gap: 16px; font-size: 0.76rem; color: #c8d4ec; }
+  .gauge-substats b { color: #ffd166; }
+  .demand-trend { font-size: 0.7rem; }
+  .gauge-diff { text-align: center; font-size: 0.8rem; font-weight: 800; margin-top: 4px; }
+  .gauge-diff.good { color: #6ee7a8; }
+  .gauge-diff.bad { color: #ff6b6b; }
+
+  .stat-row { margin-bottom: 10px; }
+  .stat-row .label { font-size: 0.76rem; color: #9fb3d1; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .meter-track { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; }
+  .meter-fill { height: 100%; transition: width .8s ease; }
+  #carbonFill { background: linear-gradient(90deg, #6ee7a8, #ffd166, #ff6b6b); }
+  #cleanFill { background: linear-gradient(90deg, #38b6ff, #6ee7a8); }
+  .big-score { font-size: 1.8rem; font-weight: 900; color: #ffd166; text-align: center; margin: 4px 0; }
+  .blackout-count { text-align: center; font-size: 0.88rem; color: #ff8787; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(6, 9, 20, 0.82); display: flex; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+  .modal-card { background: rgba(20, 28, 50, 0.98); border: 1px solid rgba(120,160,255,0.3); border-radius: 18px; padding: 22px 26px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.6); max-height: 88vh; overflow-y: auto; }
+  .detail-icon { font-size: 2.4rem; margin-bottom: 6px; }
+  .modal-card h2 { margin: 0 0 8px; color: #ffd166; font-size: 1.1rem; }
+  .detail-tip { font-size: 0.84rem; color: #c8d4ec; line-height: 1.55; margin-bottom: 12px; }
+  .detail-stats { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 16px; margin-bottom: 14px; }
+  .detail-stats div { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.82rem; border-bottom: 1px dashed rgba(255,255,255,0.08); }
+  .detail-stats div:last-child { border-bottom: none; font-weight: 700; color: #6ee7a8; }
+  .pause-note { font-size: 0.72rem; color: #ffd166; font-weight: 700; margin-bottom: 10px; }
+  .emergency-btn { background: linear-gradient(135deg,#ff6b6b,#c1121f); color: #fff; border: none; width: 100%; padding: 11px; border-radius: 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer; margin-bottom: 8px; }
+
+  .end-card { background: rgba(16, 22, 42, 0.95); border: 1px solid rgba(120,160,255,0.25); border-radius: 20px; padding: 28px 32px; max-width: 560px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); margin: auto; }
+  .end-card h1 { margin-top: 0; color: #ffd166; font-size: 1.4rem; }
+  #disasterBanner { background: linear-gradient(135deg,#c1121f,#5c0a0a); color: #fff; padding: 13px 16px; border-radius: 12px; font-weight: 800; font-size: 0.86rem; margin-bottom: 14px; border: 2px solid #ff6b6b; line-height: 1.5; }
+  .end-score { font-size: 2.5rem; font-weight: 900; color: #7bdff2; margin: 6px 0 14px; }
+  .breakdown { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; font-size: 0.86rem; }
+  .breakdown div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); }
+  .breakdown div:last-child { border-bottom: none; font-weight: 800; color: #ffd166; }
+  .save-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .save-row input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #e6ecf7; font-size: 0.88rem; }
+  .leaderboard { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; }
+  .leaderboard h3 { margin-top: 0; font-size: 0.84rem; color: #ffd166; }
+  .leaderboard ol { margin: 0; padding-left: 20px; }
+  .leaderboard li { padding: 3px 0; font-size: 0.86rem; }
+
+  #coachSpotlight { position: fixed; border: 3px solid #ffd166; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(4,6,14,0.8), 0 0 24px rgba(255,209,102,0.65); transition: all .35s ease; z-index: 1600; pointer-events: none; }
+  #coachTooltip { position: fixed; max-width: 300px; background: rgba(20,28,50,0.98); border: 1px solid rgba(255,209,102,0.4); border-radius: 14px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1601; transition: all .35s ease; }
+  #coachTitle { font-weight: 800; color: #ffd166; margin-bottom: 6px; font-size: 0.95rem; }
+  #coachBody { font-size: 0.84rem; color: #c8d4ec; line-height: 1.5; margin-bottom: 10px; }
+  .coach-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .coach-actions .primary-btn { padding: 8px 16px; font-size: 0.8rem; }
+  .coach-actions .secondary-btn { padding: 6px 12px; font-size: 0.72rem; }
+  #coachProgress { font-size: 0.68rem; color: #9fb3d1; }
+</style>
+</head>
+<body>
+
+<div id="startScreen" class="screen">
+  <div class="start-card">
+    <h1>⚡ VoltRush</h1>
+    <p class="subtitle">เกมจำลองบริหารพลังงานเมือง เล่นสบายๆ อัพเกรดโรงไฟฟ้าและเมืองได้ไม่จำกัดระดับ</p>
+
+    <div class="duration-select">
+      <div class="duration-label">⏱️ เลือกเวลาเล่น</div>
+      <div class="duration-options" id="durationOptions">
+        <button class="dur-btn selected" data-sec="180" onclick="selectDuration(180)">3 นาที</button>
+        <button class="dur-btn" data-sec="300" onclick="selectDuration(300)">5 นาที</button>
+        <button class="dur-btn" data-sec="600" onclick="selectDuration(600)">10 นาที</button>
+        <button class="dur-btn" data-sec="1800" onclick="selectDuration(1800)">30 นาที</button>
+        <button class="dur-btn" data-sec="0" onclick="selectDuration(0)">∞ ไม่จำกัดเวลา</button>
+      </div>
+    </div>
+
+    <div class="duration-select">
+      <div class="duration-label">🎲 ความถี่เหตุการณ์พิเศษ</div>
+      <div class="duration-options" id="freqOptions">
+        <button class="dur-btn" data-freq="low" onclick="selectFreq('low')">🐢 น้อย</button>
+        <button class="dur-btn selected" data-freq="normal" onclick="selectFreq('normal')">⚖️ ปกติ</button>
+        <button class="dur-btn" data-freq="high" onclick="selectFreq('high')">🔥 ถี่มาก</button>
+      </div>
+    </div>
+
+    <div class="plant-legend">
+      <div class="legend-chip">🏭 ถ่านหิน</div><div class="legend-chip">🔥 ก๊าซธรรมชาติ</div><div class="legend-chip">☀️ โซลาร์</div>
+      <div class="legend-chip">💨 กังหันลม</div><div class="legend-chip">🌊 พลังน้ำ</div><div class="legend-chip">🌋 ความร้อนใต้พิภพ</div>
+      <div class="legend-chip">🌾 ชีวมวล</div><div class="legend-chip">🌀 คลื่น/น้ำขึ้นน้ำลง</div><div class="legend-chip">☢️ นิวเคลียร์</div>
+      <div class="legend-chip">💠 ไฮโดรเจน</div><div class="legend-chip">⚛️ ฟิวชัน (อนาคต)</div><div class="legend-chip">🔋 แบตเตอรี่</div>
+    </div>
+
+    <div class="rules-box">
+      <h3>📋 กติกาเกม</h3>
+      <ul>
+        <li>เมื่อเริ่มเกม จะมี <b>บทเรียนพาชี้จุดจริงในเกม</b> ก่อน (ข้ามได้) แล้วมี <b>เวลาเตรียมตัว</b> ให้เปิด/ซื้อโรงไฟฟ้าล่วงหน้าก่อนนาฬิกาจริงเริ่มเดิน</li>
+        <li>เปิด/ปิดโรงไฟฟ้าด้วย <b>สวิตช์</b> ให้กำลังผลิตตามความต้องการของเมืองให้ทัน</li>
+        <li>แผงสถานะแสดงเหตุการณ์ปัจจุบัน → ถัดไป พร้อมนับถอยหลังตลอดเวลา และบางครั้งจะมี <b>เหตุการณ์พิเศษ</b> ทั้งดีและร้ายเกิดขึ้นแบบสุ่ม (ปรับความถี่ได้ด้านบน)</li>
+        <li>โรงไฟฟ้าขั้นสูงบางประเภทเสี่ยงเกิด<b>เหตุฉุกเฉิน</b> ต้องรีบปิดให้ทัน ไม่งั้นเกมจบทันที และโรงไฟฟ้าทุกประเภทอาจหยุดชั่วคราวหรือกำลังลดลงแบบสุ่มได้</li>
+        <li>อันดับคะแนนแยกตามเวลาเล่น และแยกช่วง วันนี้ / สัปดาห์นี้ / ตลอดกาล</li>
+      </ul>
+    </div>
+
+    <div class="start-actions">
+      <button class="primary-btn" onclick="startGame()">🚀 เริ่มเกม</button>
+    </div>
+    <div class="start-actions" style="margin-top:10px;">
+      <button class="secondary-btn" onclick="openLeaderboard(false)">🏆 ดูอันดับคะแนน</button>
+    </div>
+  </div>
+</div>
+
+<div id="leaderboardScreen" class="screen hidden">
+  <div class="start-card">
+    <h1>🏆 อันดับคะแนนสูงสุด</h1>
+    <p class="subtitle">เลือกโหมดเวลาและช่วงเวลาเพื่อดูอันดับ</p>
+    <div class="duration-options" id="lbDurationTabs">
+      <button class="dur-btn" data-sec="180" onclick="selectLbDuration(180)">3 นาที</button>
+      <button class="dur-btn" data-sec="300" onclick="selectLbDuration(300)">5 นาที</button>
+      <button class="dur-btn" data-sec="600" onclick="selectLbDuration(600)">10 นาที</button>
+      <button class="dur-btn" data-sec="1800" onclick="selectLbDuration(1800)">30 นาที</button>
+      <button class="dur-btn" data-sec="0" onclick="selectLbDuration(0)">∞ ไม่จำกัดเวลา</button>
+    </div>
+    <div class="duration-options" id="lbPeriodTabs" style="margin-top:10px;">
+      <button class="dur-btn selected" data-period="all" onclick="selectLbPeriod('all')">🏆 ตลอดกาล</button>
+      <button class="dur-btn" data-period="daily" onclick="selectLbPeriod('daily')">📅 วันนี้</button>
+      <button class="dur-btn" data-period="weekly" onclick="selectLbPeriod('weekly')">🗓️ สัปดาห์นี้</button>
+    </div>
+    <div class="leaderboard" style="margin-top:16px;">
+      <ol id="lbViewList"></ol>
+    </div>
+    <button class="secondary-btn" onclick="closeLeaderboard()">⬅ กลับ</button>
+  </div>
+</div>
+
+<div id="countdownScreen" class="screen hidden">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<div id="gameScreen" class="screen hidden">
+  <div id="gameShell">
+    <div class="top-bar">
+      <div class="timer-block">
+        <span class="clock-icon">⏱️</span>
+        <div class="main-timer-bar">
+          <div class="main-timer-fill" id="mainTimerFill"></div>
+          <div class="main-timer-badge" id="timerText">3:00</div>
+        </div>
+        <button class="secondary-btn hidden" id="skipPrepBtn" onclick="skipPrep()">▶️ เริ่มเกมทันที</button>
+        <button class="secondary-btn hidden" id="stopBtn" onclick="manualEndGame()">⏹ จบเกม</button>
+      </div>
+      <div class="env-indicators">
+        <div class="env-chip"><span id="dayNightIcon">☀️</span><span id="dayNightText">กลางวัน</span></div>
+        <div class="env-chip"><span id="weatherIcon">🌤️</span><span id="weatherText">อากาศแจ่มใส</span></div>
+        <div class="env-chip" id="moneyChip">💰 <span id="moneyVal">300</span> บาท</div>
+      </div>
+      <div class="env-chip" id="scoreChip">คะแนน: <span id="scoreTopVal">0</span></div>
+    </div>
+
+    <div class="panel status-panel">
+      <h3>🔔 สถานะและการแจ้งเตือน</h3>
+      <div class="status-tray" id="statusTray"></div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel" id="plantsPanel">
+        <h3>🎛️ แผงควบคุมโรงไฟฟ้า</h3>
+        <div class="panel-hint">👆 สวิตช์ = เปิด/ปิด • ⓘ = รายละเอียด • ⬆️ = อัพเกรด</div>
+        <div class="plants-money-bar" id="moneyChipPanel">💰 เงินสำหรับซื้อ/อัพเกรด: <span id="moneyValPanel">300</span> บาท</div>
+        <div class="panel-scroll"><div id="plantsContainer"></div></div>
+      </div>
+
+      <div class="panel">
+        <h3>🏙️ สถานะเมือง</h3>
+        <div class="city-level-label" id="cityLevelLabel">หมู่บ้านเล็ก</div>
+        <div class="city-visual" id="cityVisual">🏠🏡🏠</div>
+        <div class="city-stats-row">
+          <div class="city-stat-chip">📈 ดีมานด์ ×<span id="cityDemandMultVal">1.0</span></div>
+          <div class="city-stat-chip">🏆 คะแนน ×<span id="cityScoreMultVal">1.0</span></div>
+          <div class="city-stat-chip" id="gridEffChip">⚡ <span id="gridEffVal">100%</span></div>
+        </div>
+        <div class="gauge-section" id="gaugeSection">
+          <div class="power-gauge" id="powerGauge" style="--gauge-pct:0;--gauge-color:#ff6b6b;">
+            <div class="power-gauge-inner">
+              <div class="power-gauge-pct"><span id="gaugePctNum">0</span>%</div>
+              <div class="power-gauge-label">ประสิทธิภาพ</div>
+            </div>
+          </div>
+          <div class="gauge-substats">
+            <div>⚡ ผลิตได้ <b><span id="gaugeSupplyNum">0</span> MW</b></div>
+            <div>🏙️ ต้องการ <b><span id="gaugeDemandNum">0</span> MW <span class="demand-trend" id="demandTrend"></span></b></div>
+          </div>
+          <div class="gauge-diff" id="gaugeDiff"><span id="gaugeDiffNum">+0</span> MW <span id="gaugeDiffLabel">เหลือ</span></div>
+        </div>
+        <div class="city-progress-label" id="cityProgressLabel">เงินสะสมสำหรับอัพเกรดถัดไป</div>
+        <div class="city-progress-track"><div class="city-progress-fill" id="cityProgressFill" style="width:0%"></div></div>
+        <div class="city-upgrade-row" id="cityUpgradeRow"></div>
+      </div>
+
+      <div class="panel">
+        <h3>📊 สถิติภาพรวม</h3>
+        <div class="stat-row">
+          <div class="label"><span>🌫️ Carbon Footprint</span><span id="carbonVal">0</span></div>
+          <div class="meter-track"><div class="meter-fill" id="carbonFill" style="width:0%"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>🌱 สัดส่วนพลังงานสะอาด</span><span><span id="cleanNum">0</span>%</span></div>
+          <div class="meter-track"><div class="meter-fill" id="cleanFill" style="width:0%"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>คะแนนรวม</span></div>
+          <div class="big-score" id="scoreVal">0</div>
+        </div>
+        <div class="blackout-count">⚠️ ไฟดับไปแล้ว <span id="blackoutCountVal">0</span> ครั้ง</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="detailOverlay" class="modal-overlay hidden" onclick="if(event.target===this) closeInfo()">
+  <div class="modal-card">
+    <div id="modalContent"></div>
+    <div class="pause-note">⏸️ เกมหยุดชั่วคราวอยู่</div>
+    <button class="secondary-btn" onclick="closeInfo()">▶️ เล่นต่อ</button>
+  </div>
+</div>
+
+<div id="coachSpotlight" class="hidden"></div>
+<div id="coachTooltip" class="hidden">
+  <div id="coachTitle">หัวข้อ</div>
+  <div id="coachBody">คำอธิบาย</div>
+  <div class="coach-actions">
+    <button class="secondary-btn" onclick="coachSkip()">ข้ามทั้งหมด</button>
+    <span id="coachProgress">1 / 9</span>
+    <button class="primary-btn" id="coachNextBtn" onclick="coachNext()">ถัดไป ➡</button>
+  </div>
+</div>
+
+<div id="endScreen" class="screen hidden">
+  <div class="end-card">
+    <h1>🏁 จบเกม!</h1>
+    <div id="disasterBanner" class="hidden"></div>
+    <div class="end-score" id="finalScoreVal">0</div>
+    <div class="breakdown">
+      <div><span>😊 ความพึงพอใจของเมือง</span><span id="bdSatisfaction">0</span></div>
+      <div><span>🌱 โบนัสพลังงานสะอาด</span><span id="bdClean">+0</span></div>
+      <div><span>💰 โบนัสเงินคงเหลือ</span><span id="bdMoney">+0</span></div>
+      <div><span>🌫️ หักค่าคาร์บอน</span><span id="bdCarbon">-0</span></div>
+      <div><span>⚠️ หักจากไฟดับ (<span id="bdBlackoutCount">0</span> ครั้ง)</span><span id="bdBlackout">-0</span></div>
+      <div><span>คะแนนสุทธิ</span><span id="bdFinal">0</span></div>
+    </div>
+    <div class="save-row">
+      <input type="text" id="nameInput" placeholder="ใส่ชื่อของคุณ..." maxlength="16">
+      <button class="primary-btn" style="padding:10px 22px;font-size:0.92rem;" onclick="saveScore()">บันทึก</button>
+    </div>
+    <div class="leaderboard">
+      <h3>🏆 อันดับคะแนนสูงสุด — <span id="lbDurationLabel">3 นาที</span></h3>
+      <ol id="leaderboardList"></ol>
+    </div>
+    <div class="start-actions">
+      <button class="secondary-btn" onclick="openLeaderboard(true)">📋 ดูอันดับคะแนนทั้งหมด</button>
+      <button class="secondary-btn" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBHVM6bttnfPlctL7TwAFwAiW5Xs9qEFOM",
+  authDomain: "energy-debe5.firebaseapp.com",
+  databaseURL: "https://energy-debe5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "energy-debe5",
+  storageBucket: "energy-debe5.firebasestorage.app",
+  messagingSenderId: "802290003784",
+  appId: "1:802290003784:web:6c3c776f13d372874b8d7d",
+  measurementId: "G-T1KXRYCEQF"
+};
+let fbDb = null;
+let FIREBASE_ENABLED = false;
+try {
+  if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
+    if (!firebase.apps || !firebase.apps.length) { firebase.initializeApp(FIREBASE_CONFIG); }
+    fbDb = firebase.database();
+    FIREBASE_ENABLED = true;
+    console.log('Firebase Realtime Database เชื่อมต่อสำเร็จ');
+  } else {
+    console.warn('ไม่พบ Firebase SDK หรือยังไม่ได้ตั้งค่า — ใช้ localStorage แทน');
+  }
+} catch (e) { FIREBASE_ENABLED = false; console.error('Firebase init ล้มเหลว:', e); }
+
+async function saveScoreRemote(entry, sec) {
+  if (!FIREBASE_ENABLED) return;
+  try {
+    const durationTag = sec === 0 ? 'infinite' : String(sec);
+    const clean = JSON.parse(JSON.stringify(entry));
+    await fbDb.ref('leaderboards/' + durationTag).push(clean);
+    console.log('บันทึกคะแนนขึ้น Firebase สำเร็จ');
+  } catch (e) { console.error('บันทึกคะแนนขึ้น Firebase ล้มเหลว (เช็ค Realtime Database Rules):', e); }
+}
+async function loadLeaderboardRemote(sec, period) {
+  if (!FIREBASE_ENABLED) return null;
+  try {
+    const durationTag = sec === 0 ? 'infinite' : String(sec);
+    const snap = await fbDb.ref('leaderboards/' + durationTag).orderByChild('score').limitToLast(100).once('value');
+    let list = [];
+    snap.forEach(child => { list.push(child.val()); });
+    list = filterByPeriod(list, period);
+    list.sort((a, b) => b.score - a.score);
+    return list.slice(0, 5);
+  } catch (e) { console.error('โหลด Leaderboard จาก Firebase ล้มเหลว:', e); return null; }
+}
+
+let TOTAL_TIME = 180;
+let selectedDuration = 180;
+const LB_PREFIX = 'energyMgmtScoresV7_';
+const START_MONEY = 260;
+const BLACKOUT_THRESHOLD = 6;
+const PREP_TIME = 15;
+
+const EVENT_FREQ_OPTIONS = { low: 0.5, normal: 1, high: 1.8 };
+let selectedFreqKey = 'normal';
+let EVENT_FREQ_MULT = 1;
+function selectFreq(key) {
+  selectedFreqKey = key;
+  document.querySelectorAll('#freqOptions .dur-btn').forEach(b => b.classList.toggle('selected', b.dataset.freq === key));
+}
+
+const tips = {
+  coal: "โรงไฟฟ้าถ่านหิน: ผลิตไฟฟ้าได้เยอะและเสถียร แต่ปล่อยคาร์บอนไดออกไซด์สูงมาก มีผลต่อภาวะโลกร้อน",
+  solar: "โซลาร์เซลล์: พลังงานสะอาด ไม่มีคาร์บอน แต่ผลิตไฟได้เฉพาะช่วงกลางวันเท่านั้น",
+  wind: "กังหันลม: พลังงานสะอาด ไม่มีคาร์บอน แต่กำลังผลิตขึ้นอยู่กับความแรงของลมที่ไม่แน่นอน",
+  gas: "ก๊าซธรรมชาติ: ปล่อยคาร์บอนน้อยกว่าถ่านหินและเปิด-ปิดได้รวดเร็ว เหมาะเสริมช่วงความต้องการพุ่งสูง",
+  hydro: "พลังน้ำ: พลังงานสะอาดที่ผลิตไฟฟ้าได้สม่ำเสมอตลอดเวลา ไม่ขึ้นกับแดดหรือลม แต่ต้นทุนก่อสร้างสูง",
+  geothermal: "พลังงานความร้อนใต้พิภพ: ดึงความร้อนจากใต้ดินมาผลิตไฟฟ้าได้ตลอด 24 ชั่วโมง สะอาดและเสถียร แต่สร้างได้เฉพาะพื้นที่ที่มีความร้อนใต้ดินสูง",
+  biomass: "พลังงานชีวมวล: ผลิตไฟจากวัสดุเหลือใช้ทางการเกษตร เป็นพลังงานหมุนเวียนแต่ยังปล่อยคาร์บอนบ้างจากการเผาไหม้",
+  tidal: "พลังงานคลื่นและน้ำขึ้นน้ำลง: ใช้แรงจากมหาสมุทรผลิตไฟฟ้าได้อย่างสม่ำเสมอ เป็นเทคโนโลยีที่กำลังพัฒนาในหลายประเทศ",
+  nuclear: "พลังงานนิวเคลียร์: ปล่อยคาร์บอนต่ำมากและผลิตไฟได้มหาศาลอย่างสม่ำเสมอ แต่ต้องจัดการกากกัมมันตรังสีและความปลอดภัยอย่างระมัดระวัง",
+  hydrogen: "เซลล์เชื้อเพลิงไฮโดรเจน: เปลี่ยนไฮโดรเจนเป็นไฟฟ้าโดยปล่อยแค่น้ำ ถือเป็นพลังงานสะอาดแห่งอนาคต แต่ก๊าซไฮโดรเจนติดไฟง่าย",
+  fusion: "พลังงานฟิวชัน: เทคโนโลยีแห่งอนาคตที่เลียนแบบปฏิกิริยาในดวงอาทิตย์ ให้พลังงานสะอาดปริมาณมหาศาล ปัจจุบันยังอยู่ระหว่างการวิจัย",
+  battery: "แบตเตอรี่ ESS: เก็บไฟฟ้าส่วนเกินไว้ใช้ตอนความต้องการพุ่งสูง ช่วยลดปัญหาไฟดับได้มาก",
+  kwmw: "ความรู้ไฟฟ้า: 1 เมกะวัตต์ (MW) เท่ากับ 1,000 กิโลวัตต์ (kW) ใช้วัดกำลังการผลิต/ใช้ไฟฟ้า",
+  peak: "Peak Load คือช่วงเวลาที่ความต้องการใช้ไฟฟ้าพุ่งสูงสุด มักเกิดตอนเย็นที่คนเปิดแอร์พร้อมกันจำนวนมาก",
+  renewable: "พลังงานหมุนเวียน (โซลาร์, ลม, น้ำ) ผลิตซ้ำได้ไม่มีวันหมด ต่างจากฟอสซิล (ถ่านหิน, ก๊าซ) ที่ใช้แล้วหมดไป",
+  money: "แต่ละโรงไฟฟ้าให้รายได้ไม่เท่ากันเมื่อเปิดใช้งาน กด ⓘ ดูรายละเอียดรายได้ของแต่ละโรงไฟฟ้าได้เลย!"
+};
+const randomTipKeys = ['kwmw', 'peak', 'renewable'];
+
+const PLANT_DEFS = [
+  { key: 'coal',       icon: '🏭', name: 'ถ่านหิน',                 type: 'constant', unlocked: true,  cost: 0,   capacity: 35, carbonRate: 6, runCost: 2, income: 5,  accent: '#ff6b6b' },
+  { key: 'gas',        icon: '🔥', name: 'ก๊าซธรรมชาติ',            type: 'constant', unlocked: false, cost: 150, capacity: 28, carbonRate: 3, runCost: 1, income: 4,  accent: '#ff9f4a' },
+  { key: 'solar',      icon: '☀️', name: 'โซลาร์เซลล์',             type: 'solar',    unlocked: true,  cost: 0,   dayCapacity: 26, carbonRate: 0, runCost: 0, income: 3,  accent: '#ffd166' },
+  { key: 'wind',       icon: '💨', name: 'กังหันลม',                 type: 'wind',     unlocked: false, cost: 100, carbonRate: 0, runCost: 0, income: 3,  accent: '#38b6ff' },
+  { key: 'hydro',      icon: '🌊', name: 'พลังน้ำ',                   type: 'constant', unlocked: false, cost: 220, capacity: 22, carbonRate: 0, runCost: 0, income: 4,  accent: '#4ad0ff' },
+  { key: 'geothermal', icon: '🌋', name: 'ความร้อนใต้พิภพ',          type: 'constant', unlocked: false, cost: 260, capacity: 20, carbonRate: 0, runCost: 0, income: 4,  accent: '#ff8c42' },
+  { key: 'biomass',    icon: '🌾', name: 'ชีวมวล',                   type: 'constant', unlocked: false, cost: 130, capacity: 22, carbonRate: 2, runCost: 1, income: 3,  accent: '#8bc34a' },
+  { key: 'tidal',      icon: '🌀', name: 'คลื่น/น้ำขึ้นน้ำลง',       type: 'constant', unlocked: false, cost: 280, capacity: 18, carbonRate: 0, runCost: 0, income: 4,  accent: '#26c6da' },
+  { key: 'nuclear',    icon: '☢️', name: 'นิวเคลียร์',                type: 'constant', unlocked: false, cost: 500, capacity: 50, carbonRate: 0, runCost: 2, income: 8,  accent: '#b388ff' },
+  { key: 'hydrogen',   icon: '💠', name: 'เซลล์เชื้อเพลิงไฮโดรเจน', type: 'constant', unlocked: false, cost: 350, capacity: 24, carbonRate: 0, runCost: 1, income: 5,  accent: '#64b5f6' },
+  { key: 'fusion',     icon: '⚛️', name: 'ฟิวชัน (อนาคต)',          type: 'constant', unlocked: false, cost: 600, capacity: 60, carbonRate: 0, runCost: 0, income: 10, accent: '#ff4fd8' }
+];
+const BATTERY_DEF = { key: 'battery', icon: '🔋', name: 'แบตเตอรี่ ESS', cost: 150, capacity: 100, chargeRate: 6, dischargeRate: 9, chargeCost: 1, dischargeIncome: 3 };
+const PLANT_MAP = {};
+PLANT_DEFS.forEach(d => PLANT_MAP[d.key] = d);
+
+const EVENT_DEFS = {
+  coal:     { icon: '🏭', name: 'หม้อไอน้ำแรงดันเกิน',      warn: 'แรงดันในหม้อไอน้ำถ่านหินสูงเกินขีดจำกัด!',            resolve: 'ปิดโรงไฟฟ้าถ่านหินทันทีเพื่อลดแรงดัน!',              duration: 11, cooldown: 20, gameOverText: 'หม้อไอน้ำระเบิด! ความเสียหายรุนแรงต่อโรงไฟฟ้าและพื้นที่โดยรอบ เกมจบลงทันที' },
+  gas:      { icon: '🔥', name: 'ท่อก๊าซรั่ว',               warn: 'ตรวจพบก๊าซธรรมชาติรั่วไหล เสี่ยงเกิดเพลิงไหม้!',        resolve: 'ปิดโรงไฟฟ้าก๊าซธรรมชาติทันที!',                       duration: 9,  cooldown: 18, gameOverText: 'ก๊าซรั่วเกิดระเบิด! เพลิงไหม้ลุกลามทั่วโรงไฟฟ้า เกมจบลงทันที' },
+  nuclear:  { icon: '☢️', name: 'อุณหภูมิเตาปฏิกรณ์ผิดปกติ', warn: 'เตาปฏิกรณ์นิวเคลียร์ร้อนเกินขีดจำกัด กำลังจะหลอมละลาย!', resolve: 'ปิดโรงไฟฟ้านิวเคลียร์ทันทีเพื่อหลีกเลี่ยงหายนะ!',       duration: 11, cooldown: 30, gameOverText: 'เตาปฏิกรณ์นิวเคลียร์หลอมละลาย! กัมมันตรังสีรั่วไหลปกคลุมเมือง เกมจบลงทันที' },
+  hydrogen: { icon: '💠', name: 'ถังไฮโดรเจนรั่ว',           warn: 'ตรวจพบไฮโดรเจนรั่วไหลจากถังเก็บ เสี่ยงระเบิด!',          resolve: 'ปิดโรงไฟฟ้าเซลล์เชื้อเพลิงไฮโดรเจนทันที!',             duration: 9,  cooldown: 18, gameOverText: 'ถังไฮโดรเจนระเบิด! แรงระเบิดทำลายโครงสร้างโดยรอบ เกมจบลงทันที' },
+  fusion:   { icon: '⚛️', name: 'สนามพลาสมาไม่เสถียร',      warn: 'ระบบกักเก็บพลาสมาฟิวชันไม่เสถียร กำลังจะเสียการควบคุม!', resolve: 'ปิดโรงไฟฟ้าฟิวชันทันทีเพื่อรีเซ็ตระบบ!',               duration: 11, cooldown: 30, gameOverText: 'ปฏิกิริยาฟิวชันหลุดควบคุม! พลังงานมหาศาลปลดปล่อยออกมา เกมจบลงทันที' }
+};
+
+const BUFF_DEFS = {
+  goldenHour: { icon: '🌟', name: 'ช่วงเวลาทอง',      desc: 'รายได้จากทุกโรงไฟฟ้าเพิ่มขึ้น 2 เท่า!',            duration: 15 },
+  windBoost:  { icon: '💨', name: 'ลมแรงพิเศษ',        desc: 'กังหันลมผลิตไฟเพิ่มขึ้น 60% ชั่วคราว',              duration: 15 },
+  solarBoost: { icon: '☀️', name: 'แดดจัดพิเศษ',       desc: 'โซลาร์เซลล์ผลิตไฟเพิ่มขึ้น 60% ชั่วคราว',           duration: 15 },
+  safeZone:   { icon: '🛡️', name: 'ช่วงเวลาปลอดภัย',   desc: 'โอกาสเกิดเหตุฉุกเฉินลดลงมากชั่วคราว',              duration: 20 },
+  freeMoney:  { icon: '💰', name: 'เงินอุดหนุนพิเศษ',   desc: 'ได้รับเงินก้อนฟรีทันที',                            duration: 0 }
+};
+
+const PLANT_TITLES = ['มือใหม่', 'ฝึกหัด', 'ชำนาญการ', 'ผู้เชี่ยวชาญ', 'ปรมาจารย์', 'ตำนาน', 'เทพเจ้าพลังงาน'];
+const CITY_TITLES = ['หมู่บ้านเล็ก', 'ตำบล', 'เมืองเล็ก', 'เมืองขนาดกลาง', 'นครใหญ่', 'มหานคร', 'อภิมหานคร'];
+const CITY_BUILDINGS = ['🏠🏡🏠', '🏘️🏠🏡🏘️', '🏘️🏠🏢🏬🏠', '🏢🏬🏠🏢🏫🏠🏢', '🏙️🏢🏬🏙️🏫🏢', '🏙️🏙️🏢🏬🏙️🏫🏢🏙️', '🌆🏙️🏙️🏢🏬🏙️🏫🏢🏙️🌆'];
+const WEATHER_ICONS = { clear: '🌤️', cloudy: '☁️', windy: '🌬️', calm: '🍃' };
+const WEATHER_LABELS = { clear: 'อากาศแจ่มใส', cloudy: 'มีเมฆบัง', windy: 'ลมแรง', calm: 'ลมสงบ' };
+
+function weatherIcon(w) { return WEATHER_ICONS[w] || '🌤️'; }
+function weatherLabel(w) { return WEATHER_LABELS[w] || w; }
+function getPlantTitle(level) { return level <= PLANT_TITLES.length ? PLANT_TITLES[level - 1] : 'เทพเจ้าพลังงาน Lv.' + level; }
+function getCityTitle(level) { return level <= CITY_TITLES.length ? CITY_TITLES[level - 1] : 'อภิมหานคร Lv.' + level; }
+function getCityBuildings(level) { return CITY_BUILDINGS[Math.min(level, CITY_BUILDINGS.length) - 1]; }
+function getLevelMult(level) { return 1 + (level - 1) * 0.5; }
+function getPlantUpgradeCost(def, level) { const base = Math.max(80, def.cost); return Math.round(base * (0.85 + level * 0.7)); }
+function getCityDemandMult(level) { return 1 + (level - 1) * 0.4; }
+function getCityScoreMult(level) { return 1 + (level - 1) * 0.3; }
+function getCityUpgradeCost(level) { return Math.round(300 * (1 + (level - 1) * 0.8)); }
+
+function getEffective(def, level) {
+  const mult = getLevelMult(level || 1);
+  return {
+    capacity: def.capacity !== undefined ? Math.round(def.capacity * mult) : undefined,
+    dayCapacity: def.dayCapacity !== undefined ? Math.round(def.dayCapacity * mult) : undefined,
+    mult: mult,
+    income: Math.round(def.income * mult),
+    runCost: Math.round(def.runCost * mult),
+    carbonRate: Math.round(def.carbonRate * mult)
+  };
+}
+function getBatteryEffective(level) {
+  const mult = getLevelMult(level || 1);
+  return {
+    capacity: Math.round(BATTERY_DEF.capacity * mult),
+    chargeRate: Math.round(BATTERY_DEF.chargeRate * mult),
+    dischargeRate: Math.round(BATTERY_DEF.dischargeRate * mult),
+    dischargeIncome: Math.round(BATTERY_DEF.dischargeIncome * mult)
+  };
+}
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+function getDateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function getWeekKey(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - dayNum + 3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return date.getUTCFullYear() + '-W' + pad2(week);
+}
+function randomWeatherExcept(exclude) {
+  const options = ['clear', 'clear', 'cloudy', 'windy', 'calm'];
+  let w = options[Math.floor(Math.random() * options.length)];
+  let tries = 0;
+  while (w === exclude && tries < 5) { w = options[Math.floor(Math.random() * options.length)]; tries++; }
+  return w;
+}
+
+/* ---------- hand-holding coach-mark tutorial (points at real UI) ---------- */
+const COACH_STEPS = [
+  { target: 'plantsPanel', title: 'แผงควบคุมโรงไฟฟ้า', body: 'นี่คือพื้นที่เปิด-ปิดโรงไฟฟ้าทั้งหมดของคุณ' },
+  { target: 'switch-coal', title: 'สวิตช์เปิด-ปิด', body: 'ลองแตะสวิตช์นี้ดูได้เลยตอนนี้ เพื่อเปิดโรงไฟฟ้าถ่านหิน!' },
+  { target: 'infobtn-coal', title: 'ดูรายละเอียด (ⓘ)', body: 'กดปุ่มนี้เพื่อดูข้อมูลเชิงลึกของโรงไฟฟ้านี้ เกมจะหยุดชั่วคราวให้อ่านสบายๆ' },
+  { target: 'upgradebtn-coal', title: 'อัพเกรด (⬆️)', body: 'กดปุ่มนี้เพื่ออัพเกรดโรงไฟฟ้าให้ผลิตไฟและสร้างรายได้มากขึ้น ไม่จำกัดระดับ' },
+  { target: 'moneyChipPanel', title: 'เงินของคุณ', body: 'เงินที่ใช้ปลดล็อกและอัพเกรดโรงไฟฟ้าแสดงตรงนี้เด่นชัด' },
+  { target: 'statusTray', title: 'แผงสถานะ', body: 'กล่องเหล่านี้บอกเหตุการณ์ปัจจุบัน ไปจนถึงถัดไป พร้อมเวลานับถอยหลัง แตะเพื่อดูรายละเอียด' },
+  { target: 'gaugeSection', title: 'มาตรวัดประสิทธิภาพ', body: 'วงกลมนี้เทียบกำลังผลิตกับความต้องการไฟฟ้า สีเขียวเต็มวง แปลว่าพอ ส่วนสีแดงคือไม่พอ' },
+  { target: 'cityUpgradeRow', title: 'อัพเกรดเมือง', body: 'อัพเกรดเมืองให้ใหญ่ขึ้นตรงนี้ ยิ่งเมืองใหญ่คะแนนยิ่งเยอะ แต่ความต้องการไฟก็สูงขึ้นด้วย' },
+  { target: 'scoreChip', title: 'คะแนนรวม', body: 'คะแนนสะสมของคุณแสดงตรงนี้ตลอดเวลา พร้อมลุยได้เลย!' }
+];
+let coachIndex = 0;
+function startCoachTutorial() {
+  coachIndex = 0;
+  document.getElementById('coachSpotlight').classList.remove('hidden');
+  document.getElementById('coachTooltip').classList.remove('hidden');
+  showCoachStep(0);
+  window.addEventListener('resize', repositionCoach);
+  window.addEventListener('scroll', repositionCoach, true);
+}
+function endCoachTutorial() {
+  document.getElementById('coachSpotlight').classList.add('hidden');
+  document.getElementById('coachTooltip').classList.add('hidden');
+  window.removeEventListener('resize', repositionCoach);
+  window.removeEventListener('scroll', repositionCoach, true);
+  resumeGame();
+}
+function coachNext() { if (coachIndex < COACH_STEPS.length - 1) { coachIndex++; showCoachStep(coachIndex); } else { endCoachTutorial(); } }
+function coachSkip() { endCoachTutorial(); }
+function showCoachStep(i) {
+  const step = COACH_STEPS[i];
+  const el = document.getElementById(step.target);
+  document.getElementById('coachTitle').textContent = step.title;
+  document.getElementById('coachBody').textContent = step.body;
+  document.getElementById('coachProgress').textContent = (i + 1) + ' / ' + COACH_STEPS.length;
+  document.getElementById('coachNextBtn').textContent = (i === COACH_STEPS.length - 1) ? 'เริ่มเล่นเลย' : 'ถัดไป ➡';
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => positionCoach(el), 260); }
+}
+function positionCoach(el) {
+  const r = el.getBoundingClientRect();
+  const pad = 6;
+  const spot = document.getElementById('coachSpotlight');
+  spot.style.left = (r.left - pad) + 'px';
+  spot.style.top = (r.top - pad) + 'px';
+  spot.style.width = (r.width + pad * 2) + 'px';
+  spot.style.height = (r.height + pad * 2) + 'px';
+
+  const tip = document.getElementById('coachTooltip');
+  const tipWidth = 300;
+  let left = r.left;
+  if (left + tipWidth > window.innerWidth - 10) left = window.innerWidth - tipWidth - 10;
+  if (left < 10) left = 10;
+  let top;
+  if (r.bottom + 170 < window.innerHeight) { top = r.bottom + 14; }
+  else { top = Math.max(10, r.top - 180); }
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+function repositionCoach() {
+  const step = COACH_STEPS[coachIndex];
+  const el = document.getElementById(step.target);
+  if (el) positionCoach(el);
+}
+
+let state = null;
+let gameTimerId = null;
+
+function selectDuration(sec) {
+  selectedDuration = sec;
+  document.querySelectorAll('#durationOptions .dur-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.sec) === sec));
+}
+
+function freshState() {
+  const plants = {};
+  PLANT_DEFS.forEach(d => { plants[d.key] = { on: false, output: 0, unlocked: d.unlocked, tipShown: d.unlocked, level: 1, cooldown: 0, debuff: null }; });
+  return {
+    timeLeft: TOTAL_TIME, infinite: TOTAL_TIME === 0, elapsed: 0, money: START_MONEY,
+    prepping: true, prepTime: PREP_TIME,
+    isDay: true, weather: 'clear', nextWeatherValue: randomWeatherExcept('clear'), windLevel: 0.4, demand: 50, prevDemand: 50,
+    peakActive: false, peakTimer: 0,
+    nextPeakIn: Math.max(4, Math.round((10 + Math.floor(Math.random() * 8)) / EVENT_FREQ_MULT)),
+    nextWeatherIn: Math.max(4, Math.round((8 + Math.floor(Math.random() * 6)) / EVENT_FREQ_MULT)),
+    plants: plants,
+    battery: { mode: 'off', unlocked: false, tipShown: false, level: 1, current: 0 },
+    cityLevel: 1,
+    grossSupply: 0, netSupply: 0, consecutiveShortage: 0, blackoutActive: false, blackoutEvents: 0,
+    activeHazard: null, activeBuff: null,
+    lastTipTimer: 20,
+    breakdown: { satisfaction: 0, cleanBonus: 0, carbonPenalty: 0, blackoutPenalty: 0 }
+  };
+}
+
+function startGame() {
+  TOTAL_TIME = selectedDuration;
+  EVENT_FREQ_MULT = EVENT_FREQ_OPTIONS[selectedFreqKey];
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.add('hidden');
+  document.getElementById('countdownScreen').classList.remove('hidden');
+  runCountdown();
+}
+
+function runCountdown() {
+  let n = 3;
+  const el = document.getElementById('countdownNum');
+  el.textContent = n;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = 'pop .8s ease';
+  const cd = setInterval(() => {
+    n--;
+    if (n > 0) { el.textContent = n; }
+    else if (n === 0) { el.textContent = 'เริ่ม!'; }
+    else {
+      clearInterval(cd);
+      document.getElementById('countdownScreen').classList.add('hidden');
+      actuallyStartGame();
+      return;
+    }
+    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = 'pop .8s ease';
+  }, 800);
+}
+
+function actuallyStartGame() {
+  state = freshState();
+  document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('cityVisual').classList.remove('blackout', 'night');
+  document.getElementById('stopBtn').classList.toggle('hidden', !state.infinite);
+  renderGame();
+  gameTimerId = setInterval(gameTick, 1000);
+  showToast("เกมเริ่มแล้ว! เดี๋ยวจะพาชมส่วนต่างๆ ในเกมก่อนนะ");
+  pauseGame();
+  startCoachTutorial();
+}
+
+function manualEndGame() {
+  if (gameTimerId) { clearInterval(gameTimerId); gameTimerId = null; }
+  endGame();
+}
+function skipPrep() {
+  if (state && state.prepping) {
+    state.prepping = false;
+    showToast('เริ่มนับเวลาแข่งจริงแล้ว! สู้ๆ');
+    renderGame();
+  }
+}
+
+function flashMoney(ok) {
+  ['moneyChip', 'moneyChipPanel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('money-flash-success', 'money-flash-fail');
+    void el.offsetWidth;
+    el.classList.add(ok ? 'money-flash-success' : 'money-flash-fail');
+  });
+}
+
+function togglePlant(key) {
+  const p = state.plants[key];
+  if (!p.unlocked) return;
+  if (p.cooldown > 0) { showToast('' + PLANT_MAP[key].name + ' กำลังซ่อมแซมอยู่ อีก ' + p.cooldown + ' วิ'); return; }
+  p.on = !p.on;
+  if (p.on && !p.tipShown) { showToast(tips[key]); p.tipShown = true; }
+  renderGame();
+}
+
+function setBatteryMode(target) {
+  const b = state.battery;
+  if (!b.unlocked) return;
+  b.mode = (b.mode === target) ? 'off' : target;
+  if (b.mode !== 'off' && !b.tipShown) { showToast(tips.battery); b.tipShown = true; }
+  renderGame();
+}
+
+function buyPlant(key) {
+  if (key === 'battery') {
+    const b = state.battery;
+    if (b.unlocked) return;
+    if (state.money < BATTERY_DEF.cost) { showToast('เงินไม่พอ ต้องการ ' + BATTERY_DEF.cost + ' บาท (มี ' + Math.round(state.money) + ' บาท)'); flashMoney(false); return; }
+    state.money -= BATTERY_DEF.cost;
+    b.unlocked = true;
+    flashMoney(true);
+    showToast('ปลดล็อก แบตเตอรี่ ESS แล้ว! ' + tips.battery);
+    renderGame();
+    return;
+  }
+  const def = PLANT_MAP[key];
+  const p = state.plants[key];
+  if (!def || p.unlocked) return;
+  if (state.money < def.cost) { showToast('เงินไม่พอ ต้องการ ' + def.cost + ' บาท (มี ' + Math.round(state.money) + ' บาท)'); flashMoney(false); return; }
+  state.money -= def.cost;
+  p.unlocked = true;
+  flashMoney(true);
+  showToast('ปลดล็อก ' + def.name + ' แล้ว! ' + (tips[key] || ''));
+  renderGame();
+}
+
+function upgradePlant(key) {
+  if (key === 'battery') {
+    const b = state.battery;
+    if (!b.unlocked) return;
+    const cost = getPlantUpgradeCost(BATTERY_DEF, b.level);
+    if (state.money < cost) { showToast('เงินไม่พอสำหรับอัพเกรด ต้องการ ' + cost + ' บาท'); flashMoney(false); return; }
+    state.money -= cost;
+    b.level++;
+    flashMoney(true);
+    showToast('อัพเกรดแบตเตอรี่ ESS เป็นระดับ "' + getPlantTitle(b.level) + '" แล้ว!');
+    renderGame();
+    return;
+  }
+  const def = PLANT_MAP[key];
+  const p = state.plants[key];
+  if (!p.unlocked) return;
+  const cost = getPlantUpgradeCost(def, p.level);
+  if (state.money < cost) { showToast('เงินไม่พอสำหรับอัพเกรด ต้องการ ' + cost + ' บาท'); flashMoney(false); return; }
+  state.money -= cost;
+  p.level++;
+  flashMoney(true);
+  showToast('อัพเกรด ' + def.name + ' เป็นระดับ "' + getPlantTitle(p.level) + '" แล้ว!');
+  renderGame();
+}
+
+function upgradeCity() {
+  const cost = getCityUpgradeCost(state.cityLevel);
+  if (state.money < cost) { showToast('เงินไม่พอสำหรับอัพเกรดเมือง ต้องการ ' + cost + ' บาท'); flashMoney(false); return; }
+  state.money -= cost;
+  state.cityLevel++;
+  flashMoney(true);
+  showToast('อัพเกรดเมืองสำเร็จ! ตอนนี้เป็น "' + getCityTitle(state.cityLevel) + '"');
+  renderGame();
+}
+
+function emergencyShutdown(key) {
+  state.plants[key].on = false;
+  state.plants[key].cooldown = EVENT_DEFS[key].cooldown;
+  state.activeHazard = null;
+  showToast('ปิด ' + PLANT_MAP[key].name + ' ฉุกเฉินสำเร็จ! โรงไฟฟ้าจะซ่อมแซมชั่วคราว ' + EVENT_DEFS[key].cooldown + ' วิ');
+  closeInfo();
+  renderGame();
+}
+
+function pauseGame() { if (gameTimerId) { clearInterval(gameTimerId); gameTimerId = null; } }
+function resumeGame() { if (!gameTimerId && state && (state.infinite || state.timeLeft > 0)) { gameTimerId = setInterval(gameTick, 1000); } }
+function openInfo(key) { document.getElementById('modalContent').innerHTML = getDetailHTML(key); document.getElementById('detailOverlay').classList.remove('hidden'); pauseGame(); }
+function openEventInfo(id) { document.getElementById('modalContent').innerHTML = getEventDetailHTML(id); document.getElementById('detailOverlay').classList.remove('hidden'); pauseGame(); }
+function closeInfo() { document.getElementById('detailOverlay').classList.add('hidden'); resumeGame(); }
+
+function getEventDetailHTML(id) {
+  if (id === 'hazard' && state.activeHazard) {
+    const h = state.activeHazard, def = h.def, pd = PLANT_MAP[h.key];
+    return '<div class="detail-icon" style="color:#ff6b6b;">' + def.icon + ' → 💥</div><h2 style="color:#ff6b6b;">' + def.name + '!</h2>' +
+      '<p class="detail-tip">' + def.warn + ' ' + def.resolve + '</p>' +
+      '<div class="detail-stats"><div><span>โรงไฟฟ้า</span><span>' + pd.name + '</span></div><div><span>เหลือเวลา</span><span>' + h.timeLeft + ' วิ</span></div></div>' +
+      '<button class="emergency-btn" onclick="emergencyShutdown(\'' + h.key + '\')">ปิดโรงไฟฟ้านี้ทันที</button>';
+  }
+  if (id === 'buff' && state.activeBuff) {
+    const d = state.activeBuff.def;
+    return '<div class="detail-icon">' + d.icon + '</div><h2 style="color:#6ee7a8;">' + d.name + '</h2><p class="detail-tip">' + d.desc + '</p>' +
+      '<div class="detail-stats"><div><span>เหลือเวลา</span><span>' + state.activeBuff.timeLeft + ' วิ</span></div></div>';
+  }
+  if (id === 'peak') {
+    if (state.peakActive) {
+      return '<div class="detail-icon">📈 → ✅</div><h2>Peak Load กำลังเกิดขึ้น</h2><p class="detail-tip">' + tips.peak + '</p>' +
+        '<div class="detail-stats"><div><span>สถานะ</span><span>กำลังเกิดขึ้น</span></div><div><span>จะกลับสู่ปกติอีก</span><span>' + state.peakTimer + ' วิ</span></div></div>';
+    }
+    return '<div class="detail-icon">🔹 → 📈</div><h2>Peak Load กำลังจะมาถึง</h2><p class="detail-tip">' + tips.peak + '</p>' +
+      '<div class="detail-stats"><div><span>สถานะ</span><span>ปกติ</span></div><div><span>จะเริ่มอีก</span><span>' + state.nextPeakIn + ' วิ</span></div></div>';
+  }
+  if (id === 'weather') {
+    return '<div class="detail-icon">' + weatherIcon(state.weather) + ' → ' + weatherIcon(state.nextWeatherValue) + '</div><h2>สภาพอากาศกำลังจะเปลี่ยน</h2>' +
+      '<p class="detail-tip">สภาพอากาศส่งผลต่อกำลังผลิตของโซลาร์เซลล์และกังหันลม</p><div class="detail-stats">' +
+      '<div><span>ตอนนี้</span><span>' + weatherLabel(state.weather) + '</span></div>' +
+      '<div><span>จะเปลี่ยนเป็น</span><span>' + weatherLabel(state.nextWeatherValue) + '</span></div>' +
+      '<div><span>อีก</span><span>' + state.nextWeatherIn + ' วิ</span></div></div>';
+  }
+  if (id === 'daynight') {
+    return '<div class="detail-icon">' + (state.isDay ? '☀️ → 🌙' : '🌙 → ☀️') + '</div><h2>' + (state.isDay ? 'กำลังจะเข้าสู่กลางคืน' : 'กำลังจะเข้าสู่กลางวัน') + '</h2>' +
+      '<p class="detail-tip">กลางคืนโซลาร์เซลล์จะไม่ผลิตไฟ ต้องเตรียมโรงไฟฟ้าอื่นทดแทนให้พอ</p><div class="detail-stats"><div><span>อีก</span><span>' + dayNightRemaining() + ' วิ</span></div></div>';
+  }
+  if (id === 'blackoutWarn') {
+    return '<div class="detail-icon">⚠️ → 🔴</div><h2>เสี่ยงไฟดับ!</h2><p class="detail-tip">กำลังผลิตน้อยกว่าความต้องการต่อเนื่อง ถ้าปล่อยไว้ครบ ' + BLACKOUT_THRESHOLD + ' วินาทีเมืองจะไฟดับ</p>' +
+      '<div class="detail-stats"><div><span>ไฟจะดับใน</span><span>' + (BLACKOUT_THRESHOLD - state.consecutiveShortage) + ' วิ</span></div></div>';
+  }
+  if (id === 'blackoutActive') {
+    return '<div class="detail-icon">🔴</div><h2>ไฟดับ!</h2><p class="detail-tip">เมืองขาดแคลนพลังงาน รีบเปิดโรงไฟฟ้าเพิ่มเพื่อกู้สถานการณ์</p>' +
+      '<div class="detail-stats"><div><span>ไฟดับไปแล้ว</span><span>' + state.blackoutEvents + ' ครั้ง</span></div></div>';
+  }
+  return '';
+}
+function getDetailHTML(key) {
+  if (key === 'battery') {
+    const b = state.battery;
+    const eff = getBatteryEffective(b.level);
+    const statusText = !b.unlocked ? 'ยังไม่ปลดล็อก' : (b.mode === 'off' ? 'ปิด' : (b.mode === 'charge' ? 'กำลังชาร์จ' : 'กำลังปล่อยไฟ'));
+    return '<div class="detail-icon">🔋</div><h2>แบตเตอรี่ ESS' + (b.unlocked ? ' — ' + getPlantTitle(b.level) : '') + '</h2><p class="detail-tip">' + tips.battery + '</p>' +
+      '<div class="detail-stats">' +
+      '<div><span>สถานะ</span><span>' + statusText + '</span></div>' +
+      '<div><span>เก็บไฟอยู่</span><span>' + Math.round(b.current) + '/' + eff.capacity + '</span></div>' +
+      '<div><span>อัตราชาร์จ / ปล่อยไฟ</span><span>' + eff.chargeRate + ' / ' + eff.dischargeRate + ' MW/วิ</span></div>' +
+      '<div><span>ต้นทุนตอนชาร์จ</span><span>-' + BATTERY_DEF.chargeCost + ' บาท/วิ</span></div>' +
+      '<div><span>รายได้ตอนปล่อยไฟ</span><span>+' + eff.dischargeIncome + ' บาท/วิ</span></div>' +
+      (b.unlocked ? '<div><span>ค่าอัพเกรดถัดไป</span><span>' + getPlantUpgradeCost(BATTERY_DEF, b.level) + ' บาท</span></div>' : '') +
+      '</div>';
+  }
+  const def = PLANT_MAP[key];
+  const p = state.plants[key];
+  const eff = getEffective(def, p.level);
+  let capacityText;
+  if (def.type === 'solar') capacityText = eff.dayCapacity + ' MW (เฉพาะกลางวัน)';
+  else if (def.type === 'wind') capacityText = 'ผันแปรตามความแรงลม (~' + Math.round(4 * eff.mult) + '-' + Math.round(32 * eff.mult) + ' MW)';
+  else capacityText = eff.capacity + ' MW (คงที่เมื่อเปิด)';
+  let statusText;
+  if (!p.unlocked) statusText = 'ยังไม่ปลดล็อก (' + def.cost + ' บาท)';
+  else if (p.cooldown > 0) statusText = 'กำลังซ่อมแซม เหลือ ' + p.cooldown + ' วิ';
+  else if (p.debuff && p.debuff.type === 'outage') statusText = 'หยุดทำงานชั่วคราว เหลือ ' + p.debuff.timeLeft + ' วิ';
+  else if (p.debuff && p.debuff.type === 'reduced') statusText = 'กำลังผลิตลดลงชั่วคราว (เหลือ ' + p.debuff.timeLeft + ' วิ)';
+  else statusText = (p.on ? 'เปิดอยู่ — ผลิต ' + p.output + ' MW' : 'ปิดอยู่');
+  const net = eff.income - eff.runCost;
+  const riskLine = EVENT_DEFS[key] ? '<div><span>ความเสี่ยงเหตุฉุกเฉิน</span><span>มี (' + EVENT_DEFS[key].name + ')</span></div>' : '';
+  return '<div class="detail-icon">' + def.icon + '</div><h2>' + def.name + (p.unlocked ? ' — ' + getPlantTitle(p.level) : '') + '</h2><p class="detail-tip">' + (tips[key] || '') + '</p>' +
+    '<div class="detail-stats">' +
+    '<div><span>กำลังผลิตสูงสุด</span><span>' + capacityText + '</span></div>' +
+    '<div><span>ค่าคาร์บอน</span><span>' + (eff.carbonRate > 0 ? ('ระดับ ' + eff.carbonRate) : 'ไม่มี (0)') + '</span></div>' +
+    '<div><span>รายได้เมื่อเปิด</span><span>+' + eff.income + ' บาท/วิ</span></div>' +
+    '<div><span>ค่าดำเนินการ</span><span>' + (eff.runCost > 0 ? ('-' + eff.runCost + ' บาท/วิ') : 'ไม่มี') + '</span></div>' +
+    '<div><span>รายได้สุทธิ</span><span>+' + net + ' บาท/วิ</span></div>' +
+    riskLine +
+    (p.unlocked ? '<div><span>ค่าอัพเกรดถัดไป</span><span>' + getPlantUpgradeCost(def, p.level) + ' บาท</span></div>' : '') +
+    '<div><span>สถานะปัจจุบัน</span><span>' + statusText + '</span></div>' +
+    '</div>';
+}
+
+function updateDayNight() { const cycle = 50; state.isDay = (state.elapsed % cycle) < cycle / 2; }
+function dayNightRemaining() { const cycle = 50, half = 25; const phase = state.elapsed % cycle; return state.isDay ? (half - phase) : (cycle - phase); }
+
+function updatePeakSchedule() {
+  if (state.peakActive) {
+    state.peakTimer--;
+    if (state.peakTimer <= 0) { state.peakActive = false; state.nextPeakIn = Math.max(4, Math.round((12 + Math.floor(Math.random() * 10)) / EVENT_FREQ_MULT)); }
+    return;
+  }
+  state.nextPeakIn--;
+  if (state.nextPeakIn <= 0) { state.peakActive = true; state.peakTimer = 10; }
+}
+
+function updateWeatherSchedule() {
+  state.nextWeatherIn--;
+  if (state.nextWeatherIn <= 0) {
+    state.weather = state.nextWeatherValue;
+    state.nextWeatherValue = randomWeatherExcept(state.weather);
+    state.nextWeatherIn = Math.max(4, Math.round((10 + Math.floor(Math.random() * 8)) / EVENT_FREQ_MULT));
+  }
+}
+
+function updateDemand() {
+  state.prevDemand = state.demand;
+  const mult = getCityDemandMult(state.cityLevel);
+  let base = 50 + 15 * Math.sin(state.elapsed / 35) + (Math.random() * 4 - 2);
+  if (state.peakActive) base += 30;
+  base *= mult;
+  state.demand = Math.max(Math.round(20 * mult), Math.round(base));
+}
+
+function updateBuffs() {
+  if (state.activeBuff) {
+    state.activeBuff.timeLeft--;
+    if (state.activeBuff.timeLeft <= 0) {
+      showToast(state.activeBuff.def.name + ' สิ้นสุดลงแล้ว');
+      state.activeBuff = null;
+    }
+    return;
+  }
+  if (state.activeHazard) return;
+  if (Math.random() < 0.0035 * EVENT_FREQ_MULT) {
+    const keys = Object.keys(BUFF_DEFS);
+    const pick = keys[Math.floor(Math.random() * keys.length)];
+    const def = BUFF_DEFS[pick];
+    if (def.duration === 0) {
+      const amt = 80 + Math.floor(Math.random() * 70);
+      state.money += amt;
+      showToast(def.icon + ' ' + def.name + '! ได้รับ +' + amt + ' บาท');
+      flashMoney(true);
+    } else {
+      state.activeBuff = { type: pick, timeLeft: def.duration, def: def };
+      showToast(def.icon + ' ' + def.name + '! ' + def.desc);
+    }
+  }
+}
+
+function updateCooldowns() {
+  PLANT_DEFS.forEach(def => {
+    const p = state.plants[def.key];
+    if (p.cooldown > 0) {
+      p.cooldown--;
+      if (p.cooldown === 0) showToast('ซ่อม' + def.name + 'เสร็จแล้ว! ใช้งานได้ตามปกติ');
+    }
+  });
+}
+
+function updatePlantHiccups() {
+  PLANT_DEFS.forEach(def => {
+    const p = state.plants[def.key];
+    if (!p.unlocked) return;
+    if (p.debuff) {
+      p.debuff.timeLeft--;
+      if (p.debuff.timeLeft <= 0) { showToast(def.name + ' กลับมาทำงานปกติแล้ว'); p.debuff = null; }
+      return;
+    }
+    if (!p.on || p.cooldown > 0) return;
+    if (state.activeHazard && state.activeHazard.key === def.key) return;
+    if (Math.random() < 0.0035 * EVENT_FREQ_MULT) {
+      const type = Math.random() < 0.5 ? 'outage' : 'reduced';
+      const dur = type === 'outage' ? (8 + Math.floor(Math.random() * 7)) : (10 + Math.floor(Math.random() * 9));
+      p.debuff = { type: type, timeLeft: dur };
+      if (type === 'outage') showToast(def.name + ' หยุดทำงานชั่วคราว (บำรุงรักษา) ' + dur + ' วิ');
+      else showToast(def.name + ' ผลิตไฟลดลงชั่วคราวเหลือครึ่งหนึ่ง ' + dur + ' วิ');
+    }
+  });
+}
+
+function updatePlantOutputs() {
+  PLANT_DEFS.forEach(def => {
+    const p = state.plants[def.key];
+    if (!p.on || !p.unlocked || p.cooldown > 0) { p.output = 0; return; }
+    const eff = getEffective(def, p.level);
+    if (def.type === 'constant') {
+      p.output = eff.capacity;
+    } else if (def.type === 'solar') {
+      let b = state.isDay ? eff.dayCapacity : 0;
+      if (state.isDay && state.weather === 'cloudy') b *= 0.4;
+      if (state.activeBuff && state.activeBuff.type === 'solarBoost') b *= 1.6;
+      p.output = Math.round(b);
+    } else if (def.type === 'wind') {
+      state.windLevel += (Math.random() - 0.5) * 0.15;
+      state.windLevel = Math.max(0, Math.min(1, state.windLevel));
+      let range = [10, 22];
+      if (state.weather === 'windy') range = [18, 32];
+      if (state.weather === 'calm') range = [4, 12];
+      range = [Math.round(range[0] * eff.mult), Math.round(range[1] * eff.mult)];
+      let out = range[0] + state.windLevel * (range[1] - range[0]);
+      if (state.activeBuff && state.activeBuff.type === 'windBoost') out *= 1.6;
+      p.output = Math.round(out);
+    }
+    if (p.debuff && p.debuff.type === 'outage') p.output = 0;
+    else if (p.debuff && p.debuff.type === 'reduced') p.output = Math.round(p.output * 0.5);
+  });
+}
+
+function checkHazardEvents() {
+  if (state.activeHazard) {
+    const h = state.activeHazard;
+    const p = state.plants[h.key];
+    if (!p.on) {
+      p.cooldown = h.def.cooldown;
+      showToast('ปิด' + PLANT_MAP[h.key].name + 'ได้ทันเวลา! โรงไฟฟ้าจะซ่อมแซมชั่วคราว ' + h.def.cooldown + ' วิ');
+      state.activeHazard = null;
+      return false;
+    }
+    h.timeLeft--;
+    if (h.timeLeft <= 0) { explodeNow(h); return true; }
+    return false;
+  }
+  const safeMult = (state.activeBuff && state.activeBuff.type === 'safeZone') ? 0.15 : 1;
+  const eligible = Object.keys(EVENT_DEFS).filter(k => state.plants[k] && state.plants[k].on && state.plants[k].unlocked && state.plants[k].cooldown === 0 && !state.plants[k].debuff);
+  for (let i = 0; i < eligible.length; i++) {
+    if (state.activeHazard) break;
+    const k = eligible[i];
+    const p = state.plants[k];
+    const eff = getEffective(PLANT_MAP[k], p.level);
+    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT;
+    if (Math.random() < chance) {
+      const def = EVENT_DEFS[k];
+      state.activeHazard = { key: k, timeLeft: def.duration, def: def };
+      showToast(def.warn + ' ' + def.resolve);
+    }
+  }
+  return false;
+}
+function explodeNow(h) {
+  if (gameTimerId) { clearInterval(gameTimerId); gameTimerId = null; }
+  state.activeHazard = null;
+  endGame(h.def.gameOverText);
+}
+
+function computeSupply() {
+  const gross = PLANT_DEFS.reduce((s, def) => s + state.plants[def.key].output, 0);
+  state.grossSupply = gross;
+  const b = state.battery;
+  const beff = getBatteryEffective(b.level);
+  let net = gross, cleanFromBattery = 0;
+
+  if (b.unlocked && b.mode === 'charge') {
+    const surplus = Math.max(0, gross - state.demand);
+    const amt = Math.min(beff.chargeRate, beff.capacity - b.current, surplus);
+    b.current += amt; net = gross - amt;
+  } else if (b.unlocked && b.mode === 'discharge') {
+    const amt = Math.min(beff.dischargeRate, b.current);
+    b.current -= amt; net = gross + amt; cleanFromBattery = amt;
+  }
+  state.netSupply = Math.round(net);
+  return cleanFromBattery;
+}
+
+function updateScoreAndBlackout(cleanFromBattery) {
+  const scoreMult = getCityScoreMult(state.cityLevel);
+  const met = state.netSupply >= state.demand;
+  state.breakdown.satisfaction += (met ? 8 : -6) * scoreMult;
+
+  const clean = PLANT_DEFS.filter(d => d.carbonRate === 0).reduce((s, def) => s + state.plants[def.key].output, 0) + cleanFromBattery;
+  state.breakdown.cleanBonus += clean * 0.3 * scoreMult;
+
+  const carbon = PLANT_DEFS.reduce((s, def) => {
+    const p = state.plants[def.key];
+    if (!p.on || !p.unlocked) return s;
+    return s + getEffective(def, p.level).carbonRate;
+  }, 0);
+  state.breakdown.carbonPenalty += carbon * 0.3;
+
+  if (met) { state.consecutiveShortage = 0; } else { state.consecutiveShortage++; }
+  state.blackoutActive = state.consecutiveShortage >= BLACKOUT_THRESHOLD;
+
+  if (state.consecutiveShortage === BLACKOUT_THRESHOLD) { state.blackoutEvents++; state.breakdown.blackoutPenalty += 100 * scoreMult; }
+  if (state.blackoutActive) state.breakdown.blackoutPenalty += 10 * scoreMult;
+}
+
+function updateMoney() {
+  let income = 0, expense = 0;
+  PLANT_DEFS.forEach(def => {
+    const p = state.plants[def.key];
+    if (p.on && p.unlocked && p.cooldown === 0) { const eff = getEffective(def, p.level); income += eff.income; expense += eff.runCost; }
+  });
+  const b = state.battery;
+  if (b.unlocked) {
+    const beff = getBatteryEffective(b.level);
+    if (b.mode === 'charge') expense += BATTERY_DEF.chargeCost;
+    if (b.mode === 'discharge') income += beff.dischargeIncome;
+  }
+  if (state.activeBuff && state.activeBuff.type === 'goldenHour') income *= 2;
+  if (state.blackoutActive) income = 0;
+  state.money = Math.max(0, state.money + income - expense);
+}
+
+function maybeShowRandomTip() {
+  state.lastTipTimer--;
+  if (state.lastTipTimer <= 0) {
+    const key = randomTipKeys[Math.floor(Math.random() * randomTipKeys.length)];
+    showToast(tips[key]);
+    state.lastTipTimer = 22 + Math.floor(Math.random() * 14);
+  }
+}
+
+function currentScore() {
+  const bd = state.breakdown;
+  const moneyBonus = state.money * 0.5;
+  const raw = bd.satisfaction + bd.cleanBonus + moneyBonus - bd.carbonPenalty - bd.blackoutPenalty;
+  return Math.max(0, Math.round(raw));
+}
+
+function gameTick() {
+  if (state.prepping) {
+    state.prepTime--;
+    updatePlantOutputs();
+    computeSupply();
+    if (state.prepTime <= 0) { state.prepping = false; showToast('เริ่มนับเวลาแข่งจริงแล้ว! สู้ๆ'); }
+    renderGame();
+    return;
+  }
+
+  state.elapsed++;
+  if (!state.infinite) state.timeLeft--;
+
+  updateDayNight();
+  updatePeakSchedule();
+  updateWeatherSchedule();
+  updateDemand();
+  updateBuffs();
+  updateCooldowns();
+  updatePlantHiccups();
+  updatePlantOutputs();
+
+  const exploded = checkHazardEvents();
+  if (exploded) return;
+
+  const cleanFromBattery = computeSupply();
+  updateScoreAndBlackout(cleanFromBattery);
+  updateMoney();
+  maybeShowRandomTip();
+
+  renderGame();
+
+  if (!state.infinite && state.timeLeft <= 0) {
+    clearInterval(gameTimerId); gameTimerId = null; endGame();
+  }
+}
+
+function formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return m + ':' + (sec < 10 ? '0' : '') + sec; }
+
+function countUp(id, newVal, signed) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  newVal = Math.round(newVal);
+  const stored = parseFloat(el.getAttribute('data-val'));
+  const from = isNaN(stored) ? 0 : stored;
+  const render = v => (signed && v >= 0 ? '+' : '') + v;
+  if (from === newVal) { el.textContent = render(newVal); el.setAttribute('data-val', newVal); return; }
+  const duration = 350;
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 2);
+    const cur = Math.round(from + (newVal - from) * eased);
+    el.textContent = render(cur);
+    if (t < 1) requestAnimationFrame(step);
+    else { el.textContent = render(newVal); el.setAttribute('data-val', newVal); }
+  }
+  requestAnimationFrame(step);
+}
+
+function badgeHTML(b) {
+  return '<div class="status-badge ' + b.level + (b.pulse ? ' pulse' : '') + '" title="' + b.title + '" onclick="openEventInfo(\'' + b.id + '\')">' +
+    '<div class="t-row">' + b.iconA + (b.iconB ? ' <span class="arrow">→</span> ' + b.iconB : '') + '</div>' +
+    (b.count !== null ? '<div class="t-count">อีก ' + b.count + ' วิ</div>' : '<div class="t-count">' + (b.staticText || 'ตอนนี้!') + '</div>') +
+    '</div>';
+}
+
+function renderStatusTray() {
+  const el = document.getElementById('statusTray');
+  if (state.prepping) {
+    el.innerHTML = '<div class="status-empty" style="color:#8fe3ff;font-weight:700;">ช่วงเตรียมตัว — เปิด/ซื้อโรงไฟฟ้าได้เลย เหตุการณ์ต่างๆ ยังไม่เริ่ม</div>';
+    return;
+  }
+  const badges = [];
+
+  if (state.activeBuff) {
+    badges.push({ id: 'buff', iconA: state.activeBuff.def.icon, iconB: null, count: state.activeBuff.timeLeft, level: 'buff', title: state.activeBuff.def.name });
+  }
+  if (state.activeHazard) {
+    const h = state.activeHazard;
+    badges.push({ id: 'hazard', iconA: h.def.icon, iconB: '💥', count: h.timeLeft, level: 'danger', pulse: true, title: h.def.name });
+  }
+
+  if (state.peakActive) {
+    badges.push({ id: 'peak', iconA: '📈', iconB: '✅', count: state.peakTimer, level: 'warning', title: 'Peak Load กำลังเกิด → กลับสู่ปกติ' });
+  } else {
+    badges.push({ id: 'peak', iconA: '🔹', iconB: '📈', count: state.nextPeakIn, level: state.nextPeakIn <= 5 ? 'warning' : 'info', title: 'ปกติ → Peak Load' });
+  }
+
+  badges.push({ id: 'weather', iconA: weatherIcon(state.weather), iconB: weatherIcon(state.nextWeatherValue), count: state.nextWeatherIn, level: state.nextWeatherIn <= 5 ? 'warning' : 'info', title: weatherLabel(state.weather) + ' → ' + weatherLabel(state.nextWeatherValue) });
+
+  const dn = dayNightRemaining();
+  badges.push({ id: 'daynight', iconA: state.isDay ? '☀️' : '🌙', iconB: state.isDay ? '🌙' : '☀️', count: dn, level: dn <= 5 ? 'warning' : 'info', title: (state.isDay ? 'กลางวัน → กลางคืน' : 'กลางคืน → กลางวัน') });
+
+  if (state.consecutiveShortage >= 1 && state.consecutiveShortage < BLACKOUT_THRESHOLD) {
+    badges.push({ id: 'blackoutWarn', iconA: '⚠️', iconB: '🔴', count: BLACKOUT_THRESHOLD - state.consecutiveShortage, level: 'danger', title: 'เสี่ยง → ไฟดับ' });
+  }
+  if (state.blackoutActive) {
+    badges.push({ id: 'blackoutActive', iconA: '🔴', iconB: null, count: null, level: 'danger', pulse: true, staticText: 'ไฟดับแล้ว!', title: 'ไฟดับแล้ว' });
+  }
+
+  el.innerHTML = badges.map(badgeHTML).join('');
+}
+
+function renderPlantsPanel() {
+  const container = document.getElementById('plantsContainer');
+  let html = '';
+  PLANT_DEFS.forEach(def => {
+    const p = state.plants[def.key];
+    const riskTag = EVENT_DEFS[def.key] ? '<span class="risk-tag">เสี่ยง</span>' : '';
+    if (p.unlocked) {
+      if (p.cooldown > 0 || (p.debuff && p.debuff.type === 'outage')) {
+        const timeLeft = p.cooldown > 0 ? p.cooldown : p.debuff.timeLeft;
+        const label = p.cooldown > 0 ? 'กำลังซ่อมแซมความเสียหาย...' : 'หยุดทำงานชั่วคราว (บำรุงรักษา)...';
+        html += '<div class="plant-card cooldown">' +
+          '<div class="card-top"><div class="info"><span class="icon">🔧</span><div><div class="name">' + def.name + '<span class="level-tag">' + getPlantTitle(p.level) + '</span></div></div></div>' +
+          '<button class="info-btn" onclick="openInfo(\'' + def.key + '\')">ⓘ</button></div>' +
+          '<div class="card-bottom"><div class="repair-text">' + label + ' เหลือ ' + timeLeft + ' วิ</div></div>' +
+          '</div>';
+        return;
+      }
+      const eff = getEffective(def, p.level);
+      const net = eff.income - eff.runCost;
+      const moneyTag = p.on ? '<span class="money-tag">+' + net + '/วิ</span>' : '';
+      const debuffTag = (p.debuff && p.debuff.type === 'reduced') ? '<span class="debuff-tag">-50% (' + p.debuff.timeLeft + 'วิ)</span>' : '';
+      const upCost = getPlantUpgradeCost(def, p.level);
+      html += '<div class="plant-card ' + (p.on ? 'active' : '') + '" style="--accent:' + def.accent + ';--accent-glow:' + def.accent + '66">' +
+        '<div class="card-top"><div class="info"><span class="icon">' + def.icon + '</span><div>' +
+        '<div class="name">' + def.name + '<span class="level-tag">' + getPlantTitle(p.level) + '</span>' + riskTag + '</div>' +
+        '</div></div>' +
+        '<div class="switch ' + (p.on ? 'on' : '') + '" id="switch-' + def.key + '" style="--accent:' + def.accent + '" onclick="togglePlant(\'' + def.key + '\')"><div class="knob"></div></div>' +
+        '</div>' +
+        '<div class="card-bottom"><div class="output">' + p.output + ' MW' + moneyTag + debuffTag + '</div>' +
+        '<div class="card-actions">' +
+        '<button class="info-btn" id="infobtn-' + def.key + '" onclick="openInfo(\'' + def.key + '\')">ⓘ</button>' +
+        '<button class="upgrade-btn" id="upgradebtn-' + def.key + '" ' + (state.money >= upCost ? '' : 'disabled') + ' onclick="upgradePlant(\'' + def.key + '\')">⬆️ ' + upCost + '฿</button>' +
+        '</div></div></div>';
+    } else {
+      const afford = state.money >= def.cost;
+      html += '<div class="plant-card locked">' +
+        '<div class="card-top"><div class="info"><span class="icon">🔒</span><div><div class="name">' + def.name + riskTag + '</div></div></div>' +
+        '<button class="info-btn" onclick="openInfo(\'' + def.key + '\')">ⓘ</button></div>' +
+        '<div class="card-bottom"><div class="output">ต้องปลดล็อกก่อน</div>' +
+        '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'' + def.key + '\')">ปลดล็อก · ' + def.cost + '฿</button>' +
+        '</div></div>';
+    }
+  });
+
+  const b = state.battery;
+  if (b.unlocked) {
+    const cls = b.mode === 'charge' ? 'charging' : (b.mode === 'discharge' ? 'discharging' : '');
+    const eff = getBatteryEffective(b.level);
+    const upCost = getPlantUpgradeCost(BATTERY_DEF, b.level);
+    html += '<div class="battery-card ' + cls + '">' +
+      '<div class="battery-top"><div class="info"><span class="icon">🔋</span><div>' +
+      '<div class="name">แบตเตอรี่ ESS<span class="level-tag">' + getPlantTitle(b.level) + '</span></div>' +
+      '<div class="output">เก็บไว้ <b>' + Math.round(b.current) + '</b>/' + eff.capacity + '</div>' +
+      '</div></div>' +
+      '<div class="card-actions"><button class="info-btn" onclick="openInfo(\'battery\')">ⓘ</button>' +
+      '<button class="upgrade-btn" ' + (state.money >= upCost ? '' : 'disabled') + ' onclick="upgradePlant(\'battery\')">⬆️ ' + upCost + '฿</button></div>' +
+      '</div>' +
+      '<div class="battery-bar-track"><div class="battery-bar-fill" style="width:' + Math.round((b.current / eff.capacity) * 100) + '%"></div></div>' +
+      '<div class="battery-controls">' +
+      '<div class="battery-toggle-row"><span>ชาร์จไฟ</span><div class="switch ' + (b.mode === 'charge' ? 'on' : '') + '" style="--accent:#6ee7a8" onclick="setBatteryMode(\'charge\')"><div class="knob"></div></div></div>' +
+      '<div class="battery-toggle-row"><span>ปล่อยไฟ</span><div class="switch ' + (b.mode === 'discharge' ? 'on' : '') + '" style="--accent:#ffd166" onclick="setBatteryMode(\'discharge\')"><div class="knob"></div></div></div>' +
+      '</div></div>';
+  } else {
+    const afford = state.money >= BATTERY_DEF.cost;
+    html += '<div class="battery-card locked">' +
+      '<div class="battery-top"><div class="info"><span class="icon">🔒</span><div><div class="name">แบตเตอรี่ ESS</div></div></div>' +
+      '<button class="info-btn" onclick="openInfo(\'battery\')">ⓘ</button></div>' +
+      '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'battery\')">ปลดล็อก · ' + BATTERY_DEF.cost + '฿</button>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderCityUpgrade() {
+  document.getElementById('cityLevelLabel').textContent = 'Lv.' + state.cityLevel + ' — ' + getCityTitle(state.cityLevel);
+
+  document.getElementById('cityDemandMultVal').textContent = getCityDemandMult(state.cityLevel).toFixed(1);
+  document.getElementById('cityScoreMultVal').textContent = getCityScoreMult(state.cityLevel).toFixed(1);
+
+  const effPct = state.demand > 0 ? Math.round((state.netSupply / state.demand) * 100) : 100;
+  const gridChip = document.getElementById('gridEffChip');
+  document.getElementById('gridEffVal').textContent = Math.min(999, effPct) + '%';
+  gridChip.classList.toggle('good', effPct >= 100);
+  gridChip.classList.toggle('bad', effPct < 100);
+
+  const gauge = document.getElementById('powerGauge');
+  const ringPct = Math.max(0, Math.min(100, effPct));
+  gauge.style.setProperty('--gauge-pct', ringPct);
+  gauge.style.setProperty('--gauge-color', effPct >= 100 ? '#6ee7a8' : (effPct >= 70 ? '#ffd166' : '#ff6b6b'));
+  countUp('gaugePctNum', Math.min(999, effPct));
+  countUp('gaugeSupplyNum', state.netSupply);
+  countUp('gaugeDemandNum', state.demand);
+
+  const trendEl = document.getElementById('demandTrend');
+  trendEl.textContent = state.demand > state.prevDemand ? '▲' : (state.demand < state.prevDemand ? '▼' : '');
+  trendEl.style.color = state.demand > state.prevDemand ? '#ff9d9d' : (state.demand < state.prevDemand ? '#6ee7a8' : '#9fb3d1');
+
+  const diff = state.netSupply - state.demand;
+  countUp('gaugeDiffNum', diff, true);
+  document.getElementById('gaugeDiffLabel').textContent = diff >= 0 ? 'เหลือ' : 'ขาด';
+  document.getElementById('gaugeDiff').classList.toggle('good', diff >= 0);
+  document.getElementById('gaugeDiff').classList.toggle('bad', diff < 0);
+
+  const cost = getCityUpgradeCost(state.cityLevel);
+  const afford = state.money >= cost;
+  document.getElementById('cityProgressLabel').textContent = 'เงินสะสม ' + Math.round(state.money) + ' / ' + cost + ' บาท สำหรับอัพเกรดถัดไป';
+  document.getElementById('cityProgressFill').style.width = Math.min(100, (state.money / cost) * 100) + '%';
+
+  const el = document.getElementById('cityUpgradeRow');
+  el.innerHTML = '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="upgradeCity()">อัพเกรดเป็น "' + getCityTitle(state.cityLevel + 1) + '" · ' + cost + '฿</button>';
+}
+
+function renderGame() {
+  document.getElementById('skipPrepBtn').classList.toggle('hidden', !state.prepping);
+
+  if (state.prepping) {
+    document.getElementById('timerText').textContent = 'เตรียมตัว ' + state.prepTime + ' วิ';
+    const fillEl = document.getElementById('mainTimerFill');
+    fillEl.classList.remove('infinite'); fillEl.classList.add('prep');
+    fillEl.style.width = Math.max(0, (state.prepTime / PREP_TIME) * 100) + '%';
+  } else if (state.infinite) {
+    document.getElementById('timerText').textContent = '∞ ' + formatTime(state.elapsed);
+    document.getElementById('mainTimerFill').classList.remove('prep');
+    document.getElementById('mainTimerFill').classList.add('infinite');
+  } else {
+    document.getElementById('timerText').textContent = formatTime(Math.max(0, state.timeLeft));
+    const fillEl = document.getElementById('mainTimerFill');
+    fillEl.classList.remove('infinite', 'prep');
+    fillEl.style.width = Math.max(0, (state.timeLeft / TOTAL_TIME) * 100) + '%';
+  }
+  countUp('moneyVal', state.money);
+  countUp('moneyValPanel', state.money);
+
+  document.getElementById('dayNightIcon').textContent = state.isDay ? '☀️' : '🌙';
+  document.getElementById('dayNightText').textContent = state.isDay ? 'กลางวัน' : 'กลางคืน';
+  document.getElementById('cityVisual').classList.toggle('night', !state.isDay);
+  document.getElementById('cityVisual').textContent = getCityBuildings(state.cityLevel);
+
+  document.getElementById('weatherIcon').textContent = weatherIcon(state.weather);
+  document.getElementById('weatherText').textContent = weatherLabel(state.weather);
+
+  renderStatusTray();
+  renderPlantsPanel();
+  renderCityUpgrade();
+
+  document.getElementById('cityVisual').classList.toggle('blackout', state.blackoutActive);
+
+  const carbonMax = state.infinite ? 600 : Math.max(300, TOTAL_TIME * 1.8);
+  const carbonPct = Math.min(100, (state.breakdown.carbonPenalty / carbonMax) * 100);
+  document.getElementById('carbonFill').style.width = carbonPct + '%';
+  countUp('carbonVal', state.breakdown.carbonPenalty);
+
+  const clean = PLANT_DEFS.filter(d => d.carbonRate === 0).reduce((s, def) => s + state.plants[def.key].output, 0);
+  const totalProd = PLANT_DEFS.reduce((s, def) => s + state.plants[def.key].output, 0);
+  const cleanPct = totalProd > 0 ? Math.round((clean / totalProd) * 100) : 0;
+  document.getElementById('cleanFill').style.width = cleanPct + '%';
+  countUp('cleanNum', cleanPct);
+
+  const score = currentScore();
+  countUp('scoreVal', score);
+  countUp('scoreTopVal', score);
+  countUp('blackoutCountVal', state.blackoutEvents);
+}
+
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 6100);
+}
+
+function lbKeyForDuration(sec) { return LB_PREFIX + (sec === 0 ? 'infinite' : sec); }
+function loadAllScores(sec) {
+  try { const raw = localStorage.getItem(lbKeyForDuration(sec)); return raw ? JSON.parse(raw) : []; }
+  catch (e) { return []; }
+}
+function saveAllScores(sec, list) {
+  list.sort((a, b) => b.score - a.score);
+  if (list.length > 300) list = list.slice(0, 300);
+  localStorage.setItem(lbKeyForDuration(sec), JSON.stringify(list));
+}
+function filterByPeriod(list, period) {
+  if (period === 'daily') { const today = getDateKey(new Date()); return list.filter(e => e.date === today); }
+  if (period === 'weekly') { const wk = getWeekKey(new Date()); return list.filter(e => e.week === wk); }
+  return list;
+}
+function durationLabel() { if (state.infinite) return '∞ ไม่จำกัดเวลา'; return (TOTAL_TIME / 60) + ' นาที'; }
+
+function endGame(disasterMessage) {
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.remove('hidden');
+
+  const banner = document.getElementById('disasterBanner');
+  if (disasterMessage) { banner.textContent = disasterMessage; banner.classList.remove('hidden'); }
+  else { banner.classList.add('hidden'); }
+
+  const bd = state.breakdown;
+  const sat = Math.round(bd.satisfaction);
+  const clean = Math.round(bd.cleanBonus);
+  const moneyBonus = Math.round(state.money * 0.5);
+  const carbon = Math.round(bd.carbonPenalty);
+  const blackout = Math.round(bd.blackoutPenalty);
+  const final = currentScore();
+
+  document.getElementById('finalScoreVal').textContent = final;
+  document.getElementById('bdSatisfaction').textContent = sat;
+  document.getElementById('bdClean').textContent = '+' + clean;
+  document.getElementById('bdMoney').textContent = '+' + moneyBonus;
+  document.getElementById('bdCarbon').textContent = '-' + carbon;
+  document.getElementById('bdBlackout').textContent = '-' + blackout;
+  document.getElementById('bdBlackoutCount').textContent = state.blackoutEvents;
+  document.getElementById('bdFinal').textContent = final;
+  document.getElementById('lbDurationLabel').textContent = durationLabel();
+
+  document.getElementById('nameInput').value = '';
+  document.getElementById('nameInput').disabled = false;
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const sec = state.infinite ? 0 : TOTAL_TIME;
+  const list = loadAllScores(sec).slice().sort((a, b) => b.score - a.score).slice(0, 5);
+  const ol = document.getElementById('leaderboardList');
+  ol.innerHTML = '';
+  if (list.length === 0) { ol.innerHTML = '<li style="color:#9fb3d1;">ยังไม่มีคะแนนบันทึกไว้</li>'; return; }
+  list.forEach(entry => {
+    const li = document.createElement('li');
+    let text = entry.name + ' — ' + entry.score + ' คะแนน';
+    if (state.infinite && entry.elapsed) text += ' • เล่นไป ' + formatTime(entry.elapsed);
+    li.textContent = text;
+    ol.appendChild(li);
+  });
+}
+
+function saveScore() {
+  const nameInput = document.getElementById('nameInput');
+  let name = nameInput.value.trim();
+  if (!name) name = 'ผู้เล่นนิรนาม';
+  const score = currentScore();
+  const now = new Date();
+  const sec = state.infinite ? 0 : TOTAL_TIME;
+  const entry = { name: name, score: score, elapsed: state.infinite ? state.elapsed : undefined, ts: Date.now(), date: getDateKey(now), week: getWeekKey(now) };
+  let list = loadAllScores(sec);
+  list.push(entry);
+  saveAllScores(sec, list);
+  if (FIREBASE_ENABLED) saveScoreRemote(entry, sec);
+  renderLeaderboard();
+  nameInput.disabled = true;
+}
+
+let lbViewDuration = 180;
+let lbViewPeriod = 'all';
+let lbReturnScreen = 'startScreen';
+function openLeaderboard(fromEnd) {
+  lbReturnScreen = fromEnd ? 'endScreen' : 'startScreen';
+  document.getElementById(lbReturnScreen).classList.add('hidden');
+  lbViewDuration = fromEnd ? (state.infinite ? 0 : TOTAL_TIME) : selectedDuration;
+  lbViewPeriod = 'all';
+  document.getElementById('leaderboardScreen').classList.remove('hidden');
+  syncLbTabs();
+  syncLbPeriodTabs();
+  renderLeaderboardView();
+}
+function closeLeaderboard() {
+  document.getElementById('leaderboardScreen').classList.add('hidden');
+  document.getElementById(lbReturnScreen).classList.remove('hidden');
+}
+function selectLbDuration(sec) { lbViewDuration = sec; syncLbTabs(); renderLeaderboardView(); }
+function selectLbPeriod(p) { lbViewPeriod = p; syncLbPeriodTabs(); renderLeaderboardView(); }
+function syncLbTabs() { document.querySelectorAll('#lbDurationTabs .dur-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.sec) === lbViewDuration)); }
+function syncLbPeriodTabs() { document.querySelectorAll('#lbPeriodTabs .dur-btn').forEach(b => b.classList.toggle('selected', b.dataset.period === lbViewPeriod)); }
+
+async function renderLeaderboardView() {
+  const ol = document.getElementById('lbViewList');
+  ol.innerHTML = '<li style="color:#9fb3d1;">กำลังโหลด...</li>';
+  let list = null;
+  if (FIREBASE_ENABLED) { list = await loadLeaderboardRemote(lbViewDuration, lbViewPeriod); }
+  if (!list) { list = filterByPeriod(loadAllScores(lbViewDuration), lbViewPeriod).sort((a, b) => b.score - a.score).slice(0, 5); }
+  ol.innerHTML = '';
+  if (list.length === 0) { ol.innerHTML = '<li style="color:#9fb3d1;">ยังไม่มีคะแนนบันทึกไว้ในช่วงนี้</li>'; return; }
+  list.forEach(entry => {
+    const li = document.createElement('li');
+    let text = entry.name + ' — ' + entry.score + ' คะแนน';
+    if (lbViewDuration === 0 && entry.elapsed) text += ' • เล่นไป ' + formatTime(entry.elapsed);
+    li.textContent = text;
+    ol.appendChild(li);
+  });
+}
+
+function restartGame() {
+  document.getElementById('endScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
