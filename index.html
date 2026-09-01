@@ -243,6 +243,20 @@
   #cleanFill { background: linear-gradient(90deg, #38b6ff, #6ee7a8); }
   .big-score { font-size: 1.8rem; font-weight: 900; color: #ffd166; text-align: center; margin: 4px 0; }
   .blackout-count { text-align: center; font-size: 0.88rem; color: #ff8787; }
+  .score-rate-breakdown { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.72rem; color: #c8d4ec; }
+  .score-rate-breakdown b { font-weight: 800; }
+  #scorePopupLayer { position: fixed; z-index: 900; pointer-events: none; }
+  .score-popup {
+    position: fixed; font-weight: 900; font-size: 1.05rem; z-index: 900; pointer-events: none;
+    animation: scorePopupFloat 1.1s ease-out forwards;
+  }
+  .score-popup.good { color: #6ee7a8; text-shadow: 0 0 8px rgba(110,231,168,0.6); }
+  .score-popup.bad { color: #ff6b6b; text-shadow: 0 0 8px rgba(255,107,107,0.6); }
+  @keyframes scorePopupFloat {
+    0% { transform: translateY(0); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translateY(-38px); opacity: 0; }
+  }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(6, 9, 20, 0.82); display: flex; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
   .modal-card { background: rgba(20, 28, 50, 0.98); border: 1px solid rgba(120,160,255,0.3); border-radius: 18px; padding: 22px 26px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.6); max-height: 88vh; overflow-y: auto; }
@@ -444,6 +458,15 @@
         <div class="stat-row">
           <div class="label"><span>คะแนนรวม</span></div>
           <div class="big-score" id="scoreVal">0</div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>📈 อัตราคะแนน/วินาที</span></div>
+          <div class="score-rate-breakdown" id="scoreRateBreakdown">
+            <div>😊 พอใจ <b id="rateSatisfaction">—</b></div>
+            <div>🌱 สะอาด <b id="rateClean">—</b></div>
+            <div>🌫️ คาร์บอน <b id="rateCarbon">—</b></div>
+            <div id="rateBlackoutRow" class="hidden">⚠️ ไฟดับ <b id="rateBlackout">—</b></div>
+          </div>
         </div>
         <div class="blackout-count">⚠️ ไฟดับไปแล้ว <span id="blackoutCountVal">0</span> ครั้ง</div>
       </div>
@@ -831,6 +854,8 @@ function getPlantUpgradeCost(def, level) { const base = Math.max(80, def.cost); 
 function getCityDemandMult(level) { return 1 + (level - 1) * 0.4; }
 function getCityScoreMult(level) { return 1 + (level - 1) * 0.3; }
 function getCityUpgradeCost(level) { return Math.round(300 * (1 + (level - 1) * 0.8)); }
+function getCityHazardMult(level) { return 1 + (level - 1) * 0.25; }
+function getCityBlackoutThreshold(level) { return Math.max(3, BLACKOUT_THRESHOLD - Math.floor((level - 1) / 2)); }
 
 function getEffective(def, level) {
   const mult = getLevelMult(level || 1);
@@ -964,7 +989,7 @@ function freshState() {
     cityLevel: 1,
     grossSupply: 0, netSupply: 0, consecutiveShortage: 0, blackoutActive: false, blackoutEvents: 0,
     activeHazard: null, activeBuff: null,
-    lastTipTimer: 20,
+    lastTipTimer: 20, lastRate: null,
     breakdown: { satisfaction: 0, cleanBonus: 0, carbonPenalty: 0, blackoutPenalty: 0 }
   };
 }
@@ -1173,8 +1198,8 @@ function getEventDetailHTML(id) {
       '<p class="detail-tip">กลางคืนโซลาร์เซลล์จะไม่ผลิตไฟ ต้องเตรียมโรงไฟฟ้าอื่นทดแทนให้พอ</p><div class="detail-stats"><div><span>อีก</span><span>' + dayNightRemaining() + ' วิ</span></div></div>';
   }
   if (id === 'blackoutWarn') {
-    return '<div class="detail-icon">⚠️ → 🔴</div><h2>เสี่ยงไฟดับ!</h2><p class="detail-tip">กำลังผลิตน้อยกว่าความต้องการต่อเนื่อง ถ้าปล่อยไว้ครบ ' + BLACKOUT_THRESHOLD + ' วินาทีเมืองจะไฟดับ</p>' +
-      '<div class="detail-stats"><div><span>ไฟจะดับใน</span><span>' + (BLACKOUT_THRESHOLD - state.consecutiveShortage) + ' วิ</span></div></div>';
+    return '<div class="detail-icon">⚠️ → 🔴</div><h2>เสี่ยงไฟดับ!</h2><p class="detail-tip">กำลังผลิตน้อยกว่าความต้องการต่อเนื่อง ถ้าปล่อยไว้ครบ ' + getCityBlackoutThreshold(state.cityLevel) + ' วินาทีเมืองจะไฟดับ</p>' +
+      '<div class="detail-stats"><div><span>ไฟจะดับใน</span><span>' + (getCityBlackoutThreshold(state.cityLevel) - state.consecutiveShortage) + ' วิ</span></div></div>';
   }
   if (id === 'blackoutActive') {
     return '<div class="detail-icon">🔴</div><h2>ไฟดับ!</h2><p class="detail-tip">เมืองขาดแคลนพลังงาน รีบเปิดโรงไฟฟ้าเพิ่มเพื่อกู้สถานการณ์</p>' +
@@ -1364,7 +1389,7 @@ function checkHazardEvents() {
     const k = eligible[i];
     const p = state.plants[k];
     const eff = getEffective(PLANT_MAP[k], p.level);
-    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT;
+    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT * getCityHazardMult(state.cityLevel);
     if (Math.random() < chance) {
       const def = EVENT_DEFS[k];
       state.activeHazard = { key: k, timeLeft: def.duration, def: def };
@@ -1403,23 +1428,45 @@ function computeSupply() {
 function updateScoreAndBlackout(cleanFromBattery) {
   const scoreMult = getCityScoreMult(state.cityLevel);
   const met = state.netSupply >= state.demand;
-  state.breakdown.satisfaction += (met ? 8 : -6) * scoreMult;
+  const satDelta = (met ? 8 : -6) * scoreMult;
+  state.breakdown.satisfaction += satDelta;
 
   const clean = PLANT_DEFS.filter(d => d.carbonRate === 0).reduce((s, def) => s + state.plants[def.key].output, 0) + cleanFromBattery;
-  state.breakdown.cleanBonus += clean * 0.3 * scoreMult;
+  const cleanDelta = clean * 0.3 * scoreMult;
+  state.breakdown.cleanBonus += cleanDelta;
 
   const carbon = PLANT_DEFS.reduce((s, def) => {
     const p = state.plants[def.key];
     if (!p.on || !p.unlocked) return s;
     return s + getEffective(def, p.level).carbonRate;
   }, 0);
-  state.breakdown.carbonPenalty += carbon * 0.3;
+  const carbonDelta = carbon * 0.3;
+  state.breakdown.carbonPenalty += carbonDelta;
 
+  const threshold = getCityBlackoutThreshold(state.cityLevel);
   if (met) { state.consecutiveShortage = 0; } else { state.consecutiveShortage++; }
-  state.blackoutActive = state.consecutiveShortage >= BLACKOUT_THRESHOLD;
+  state.blackoutActive = state.consecutiveShortage >= threshold;
 
-  if (state.consecutiveShortage === BLACKOUT_THRESHOLD) { state.blackoutEvents++; state.breakdown.blackoutPenalty += 100 * scoreMult; sndBlackout(); }
-  if (state.blackoutActive) state.breakdown.blackoutPenalty += 10 * scoreMult;
+  let blackoutDelta = 0;
+  if (state.consecutiveShortage === threshold) {
+    state.blackoutEvents++;
+    const hit = 100 * scoreMult;
+    state.breakdown.blackoutPenalty += hit;
+    blackoutDelta += hit;
+    sndBlackout();
+    showToast('⚠️ ไฟดับ! เมืองขาดแคลนพลังงาน (-' + Math.round(hit) + ' คะแนน)');
+    spawnScorePopup(-hit);
+  }
+  if (state.blackoutActive) {
+    const ongoing = 10 * scoreMult;
+    state.breakdown.blackoutPenalty += ongoing;
+    blackoutDelta += ongoing;
+  }
+
+  state.lastRate = { satisfaction: satDelta, clean: cleanDelta, carbon: carbonDelta, blackout: blackoutDelta };
+
+  const netDelta = satDelta + cleanDelta - carbonDelta - blackoutDelta;
+  if (Math.abs(netDelta) >= 12) spawnScorePopup(netDelta);
 }
 
 function updateMoney() {
@@ -1449,6 +1496,7 @@ function maybeShowRandomTip() {
 }
 
 function currentScore() {
+  if (state.prepping) return 0;
   const bd = state.breakdown;
   const moneyBonus = state.money * 0.5;
   const raw = bd.satisfaction + bd.cleanBonus + moneyBonus - bd.carbonPenalty - bd.blackoutPenalty;
@@ -1632,8 +1680,8 @@ function renderStatusTray() {
   const dn = dayNightRemaining();
   badges.push({ id: 'daynight', iconA: state.isDay ? '☀️' : '🌙', iconB: state.isDay ? '🌙' : '☀️', count: dn, level: dn <= 5 ? 'warning' : 'info', title: (state.isDay ? 'กลางวัน → กลางคืน' : 'กลางคืน → กลางวัน') });
 
-  if (state.consecutiveShortage >= 1 && state.consecutiveShortage < BLACKOUT_THRESHOLD) {
-    badges.push({ id: 'blackoutWarn', iconA: '⚠️', iconB: '🔴', count: BLACKOUT_THRESHOLD - state.consecutiveShortage, level: 'danger', title: 'เสี่ยง → ไฟดับ' });
+  if (state.consecutiveShortage >= 1 && state.consecutiveShortage < getCityBlackoutThreshold(state.cityLevel)) {
+    badges.push({ id: 'blackoutWarn', iconA: '⚠️', iconB: '🔴', count: getCityBlackoutThreshold(state.cityLevel) - state.consecutiveShortage, level: 'danger', title: 'เสี่ยง → ไฟดับ' });
   }
   if (state.blackoutActive) {
     badges.push({ id: 'blackoutActive', iconA: '🔴', iconB: null, count: null, level: 'danger', pulse: true, staticText: 'ไฟดับแล้ว!', title: 'ไฟดับแล้ว' });
@@ -1754,8 +1802,40 @@ function renderCityUpgrade() {
   el.innerHTML = '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="upgradeCity()">อัพเกรดเป็น "' + getCityTitle(state.cityLevel + 1) + '" · ' + cost + '฿</button>';
 }
 
+function spawnScorePopup(delta) {
+  const anchor = document.getElementById('scoreChip');
+  if (!anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'score-popup ' + (delta >= 0 ? 'good' : 'bad');
+  el.textContent = (delta >= 0 ? '+' : '') + Math.round(delta);
+  el.style.left = (r.left + r.width / 2 - 14) + 'px';
+  el.style.top = (r.bottom + 4) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1150);
+}
+function renderScoreRate() {
+  const rate = state.lastRate;
+  const sat = document.getElementById('rateSatisfaction');
+  const clean = document.getElementById('rateClean');
+  const carbon = document.getElementById('rateCarbon');
+  const blackoutRow = document.getElementById('rateBlackoutRow');
+  const blackoutEl = document.getElementById('rateBlackout');
+  if (!rate || state.prepping) {
+    sat.textContent = '—'; clean.textContent = '—'; carbon.textContent = '—';
+    blackoutRow.classList.add('hidden');
+    return;
+  }
+  sat.textContent = (rate.satisfaction >= 0 ? '+' : '') + rate.satisfaction.toFixed(1);
+  clean.textContent = '+' + rate.clean.toFixed(1);
+  carbon.textContent = '-' + rate.carbon.toFixed(1);
+  if (rate.blackout > 0) { blackoutRow.classList.remove('hidden'); blackoutEl.textContent = '-' + rate.blackout.toFixed(1); }
+  else blackoutRow.classList.add('hidden');
+}
+
 function renderGame() {
   updateSky();
+  renderScoreRate();
   document.getElementById('skipPrepBtn').classList.toggle('hidden', !state.prepping);
 
   if (state.prepping) {
