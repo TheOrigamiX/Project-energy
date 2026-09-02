@@ -280,7 +280,8 @@
   .save-row input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #e6ecf7; font-size: 0.88rem; }
   .leaderboard { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; }
   .leaderboard h3 { margin-top: 0; font-size: 0.84rem; color: #ffd166; }
-  .leaderboard ol { margin: 0; padding-left: 20px; }
+  .leaderboard ol { margin: 0; padding-left: 20px; max-height: 46vh; overflow-y: auto; }
+  #lbViewList { max-height: 52vh; overflow-y: auto; }
   .leaderboard li { padding: 3px 0; font-size: 0.86rem; }
 
   #coachSpotlight { position: fixed; border: 3px solid #ffd166; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(4,6,14,0.8), 0 0 24px rgba(255,209,102,0.65); transition: all .35s ease; z-index: 1600; pointer-events: none; }
@@ -565,7 +566,7 @@ async function loadLeaderboardRemote(sec, period) {
     snap.forEach(child => { list.push(child.val()); });
     list = filterByPeriod(list, period);
     list.sort((a, b) => b.score - a.score);
-    return list.slice(0, 5);
+    return list.slice(0, 100);
   } catch (e) { console.error('โหลด Leaderboard จาก Firebase ล้มเหลว:', e); return null; }
 }
 
@@ -879,8 +880,10 @@ function getBatteryEffective(level) {
 }
 
 function pad2(n) { return n < 10 ? '0' + n : '' + n; }
-function getDateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
-function getWeekKey(d) {
+function getShiftedDate(d) { return new Date(d.getTime() - 12 * 60 * 60 * 1000); }
+function getDateKey(rawD) { const d = getShiftedDate(rawD); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function getWeekKey(rawD) {
+  const d = getShiftedDate(rawD);
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = (date.getUTCDay() + 6) % 7;
   date.setUTCDate(date.getUTCDate() - dayNum + 3);
@@ -888,6 +891,9 @@ function getWeekKey(d) {
   const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
   return date.getUTCFullYear() + '-W' + pad2(week);
 }
+/* Daily board resets at noon (not midnight); weekly resets Monday noon.
+   Shifting the timestamp back 12h before computing the calendar-day /
+   ISO-week key moves both reset points from 00:00 to 12:00 automatically. */
 function randomWeatherExcept(exclude) {
   const options = ['clear', 'clear', 'cloudy', 'windy', 'calm'];
   let w = options[Math.floor(Math.random() * options.length)];
@@ -976,7 +982,7 @@ function selectDuration(sec) {
 
 function freshState() {
   const plants = {};
-  PLANT_DEFS.forEach(d => { plants[d.key] = { on: false, output: 0, unlocked: d.unlocked, tipShown: d.unlocked, level: 1, cooldown: 0, debuff: null }; });
+  PLANT_DEFS.forEach(d => { plants[d.key] = { on: d.unlocked, output: 0, unlocked: d.unlocked, tipShown: d.unlocked, level: 1, cooldown: 0, debuff: null }; });
   return {
     timeLeft: TOTAL_TIME, infinite: TOTAL_TIME === 0, elapsed: 0, money: START_MONEY,
     prepping: true, prepTime: PREP_TIME,
@@ -1105,6 +1111,8 @@ function buyPlant(key) {
   if (state.money < def.cost) { showToast('เงินไม่พอ ต้องการ ' + def.cost + ' บาท (มี ' + Math.round(state.money) + ' บาท)'); flashMoney(false); sndError(); return; }
   state.money -= def.cost;
   p.unlocked = true;
+  p.on = true;
+  p.tipShown = true;
   flashMoney(true);
   sndBuy();
   showToast('ปลดล็อก ' + def.name + ' แล้ว! ' + (tips[key] || ''));
@@ -1912,8 +1920,8 @@ function saveAllScores(sec, list) {
   localStorage.setItem(lbKeyForDuration(sec), JSON.stringify(list));
 }
 function filterByPeriod(list, period) {
-  if (period === 'daily') { const today = getDateKey(new Date()); return list.filter(e => e.date === today); }
-  if (period === 'weekly') { const wk = getWeekKey(new Date()); return list.filter(e => e.week === wk); }
+  if (period === 'daily') { const today = getDateKey(getShiftedDate(new Date())); return list.filter(e => e.date === today); }
+  if (period === 'weekly') { const wk = getWeekKey(getShiftedDate(new Date())); return list.filter(e => e.week === wk); }
   return list;
 }
 function durationLabel() { if (state.infinite) return '∞ ไม่จำกัดเวลา'; return (TOTAL_TIME / 60) + ' นาที'; }
@@ -1958,7 +1966,7 @@ function endGame(disasterMessage) {
 
 function renderLeaderboard() {
   const sec = state.infinite ? 0 : TOTAL_TIME;
-  const list = loadAllScores(sec).slice().sort((a, b) => b.score - a.score).slice(0, 5);
+  const list = loadAllScores(sec).slice().sort((a, b) => b.score - a.score).slice(0, 100);
   const ol = document.getElementById('leaderboardList');
   ol.innerHTML = '';
   if (list.length === 0) { ol.innerHTML = '<li style="color:#9fb3d1;">ยังไม่มีคะแนนบันทึกไว้</li>'; return; }
@@ -1979,7 +1987,7 @@ function saveScore() {
   const score = currentScore();
   const now = new Date();
   const sec = state.infinite ? 0 : TOTAL_TIME;
-  const entry = { name: name, score: score, elapsed: state.infinite ? state.elapsed : undefined, ts: Date.now(), date: getDateKey(now), week: getWeekKey(now) };
+  const entry = { name: name, score: score, elapsed: state.infinite ? state.elapsed : undefined, ts: Date.now(), date: getDateKey(getShiftedDate(now)), week: getWeekKey(getShiftedDate(now)) };
   let list = loadAllScores(sec);
   list.push(entry);
   saveAllScores(sec, list);
@@ -2018,10 +2026,10 @@ async function renderLeaderboardView() {
   ol.innerHTML = '<li style="color:#9fb3d1;">กำลังโหลด...</li>';
   let list = null;
   if (FIREBASE_ENABLED) { list = await loadLeaderboardRemote(lbViewDuration, lbViewPeriod); }
-  if (!list) { list = filterByPeriod(loadAllScores(lbViewDuration), lbViewPeriod).sort((a, b) => b.score - a.score).slice(0, 5); }
+  if (!list) { list = filterByPeriod(loadAllScores(lbViewDuration), lbViewPeriod).sort((a, b) => b.score - a.score).slice(0, 100); }
   ol.innerHTML = '';
   if (list.length === 0) { ol.innerHTML = '<li style="color:#9fb3d1;">ยังไม่มีคะแนนบันทึกไว้ในช่วงนี้</li>'; return; }
-  list.forEach(entry => {
+  list.forEach((entry, i) => {
     const li = document.createElement('li');
     let text = entry.name + ' — ' + entry.score + ' คะแนน';
     if (lbViewDuration === 0 && entry.elapsed) text += ' • เล่นไป ' + formatTime(entry.elapsed);
