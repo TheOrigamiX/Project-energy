@@ -281,6 +281,7 @@
   .leaderboard { text-align: left; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; }
   .leaderboard h3 { margin-top: 0; font-size: 0.84rem; color: #ffd166; }
   .leaderboard ol { margin: 0; padding-left: 20px; max-height: 46vh; overflow-y: auto; }
+  .lb-reset-countdown { text-align: center; font-size: 0.78rem; color: #8fe3ff; font-weight: 700; margin-top: 10px; }
   #lbViewList { max-height: 52vh; overflow-y: auto; }
   .leaderboard li { padding: 3px 0; font-size: 0.86rem; }
 
@@ -373,6 +374,7 @@
       <button class="dur-btn" data-period="daily" onclick="selectLbPeriod('daily')">📅 วันนี้</button>
       <button class="dur-btn" data-period="weekly" onclick="selectLbPeriod('weekly')">🗓️ สัปดาห์นี้</button>
     </div>
+    <div class="lb-reset-countdown hidden" id="lbResetCountdown"></div>
     <div class="leaderboard" style="margin-top:16px;">
       <ol id="lbViewList"></ol>
     </div>
@@ -777,6 +779,7 @@ const LB_PREFIX = 'energyMgmtScoresV7_';
 const START_MONEY = 260;
 const BLACKOUT_THRESHOLD = 6;
 const PREP_TIME = 15;
+const GRACE_PERIOD = 22;
 
 const EVENT_FREQ_OPTIONS = { low: 0.5, normal: 1, high: 1.8 };
 let selectedFreqKey = 'normal';
@@ -857,6 +860,7 @@ function getCityScoreMult(level) { return 1 + (level - 1) * 0.3; }
 function getCityUpgradeCost(level) { return Math.round(300 * (1 + (level - 1) * 0.8)); }
 function getCityHazardMult(level) { return 1 + (level - 1) * 0.25; }
 function getCityBlackoutThreshold(level) { return Math.max(3, BLACKOUT_THRESHOLD - Math.floor((level - 1) / 2)); }
+function getEffectiveBlackoutThreshold() { return getCityBlackoutThreshold(state.cityLevel) + (state.elapsed < GRACE_PERIOD ? 3 : 0); }
 
 function getEffective(def, level) {
   const mult = getLevelMult(level || 1);
@@ -988,7 +992,7 @@ function freshState() {
     prepping: true, prepTime: PREP_TIME,
     isDay: true, weather: 'clear', nextWeatherValue: randomWeatherExcept('clear'), windLevel: 0.4, demand: 50, prevDemand: 50,
     peakActive: false, peakTimer: 0,
-    nextPeakIn: Math.max(4, Math.round((10 + Math.floor(Math.random() * 8)) / EVENT_FREQ_MULT)),
+    nextPeakIn: Math.max(4, Math.round((26 + Math.floor(Math.random() * 10)) / EVENT_FREQ_MULT)),
     nextWeatherIn: Math.max(4, Math.round((8 + Math.floor(Math.random() * 6)) / EVENT_FREQ_MULT)),
     plants: plants,
     battery: { mode: 'off', unlocked: false, tipShown: false, level: 1, current: 0 },
@@ -1206,8 +1210,8 @@ function getEventDetailHTML(id) {
       '<p class="detail-tip">กลางคืนโซลาร์เซลล์จะไม่ผลิตไฟ ต้องเตรียมโรงไฟฟ้าอื่นทดแทนให้พอ</p><div class="detail-stats"><div><span>อีก</span><span>' + dayNightRemaining() + ' วิ</span></div></div>';
   }
   if (id === 'blackoutWarn') {
-    return '<div class="detail-icon">⚠️ → 🔴</div><h2>เสี่ยงไฟดับ!</h2><p class="detail-tip">กำลังผลิตน้อยกว่าความต้องการต่อเนื่อง ถ้าปล่อยไว้ครบ ' + getCityBlackoutThreshold(state.cityLevel) + ' วินาทีเมืองจะไฟดับ</p>' +
-      '<div class="detail-stats"><div><span>ไฟจะดับใน</span><span>' + (getCityBlackoutThreshold(state.cityLevel) - state.consecutiveShortage) + ' วิ</span></div></div>';
+    return '<div class="detail-icon">⚠️ → 🔴</div><h2>เสี่ยงไฟดับ!</h2><p class="detail-tip">กำลังผลิตน้อยกว่าความต้องการต่อเนื่อง ถ้าปล่อยไว้ครบ ' + getEffectiveBlackoutThreshold() + ' วินาทีเมืองจะไฟดับ</p>' +
+      '<div class="detail-stats"><div><span>ไฟจะดับใน</span><span>' + (getEffectiveBlackoutThreshold() - state.consecutiveShortage) + ' วิ</span></div></div>';
   }
   if (id === 'blackoutActive') {
     return '<div class="detail-icon">🔴</div><h2>ไฟดับ!</h2><p class="detail-tip">เมืองขาดแคลนพลังงาน รีบเปิดโรงไฟฟ้าเพิ่มเพื่อกู้สถานการณ์</p>' +
@@ -1391,6 +1395,8 @@ function checkHazardEvents() {
     return false;
   }
   const safeMult = (state.activeBuff && state.activeBuff.type === 'safeZone') ? 0.15 : 1;
+  const graceMult = state.elapsed < GRACE_PERIOD ? 0 : 1;
+  if (graceMult === 0) return false;
   const eligible = Object.keys(EVENT_DEFS).filter(k => state.plants[k] && state.plants[k].on && state.plants[k].unlocked && state.plants[k].cooldown === 0 && !state.plants[k].debuff);
   for (let i = 0; i < eligible.length; i++) {
     if (state.activeHazard) break;
@@ -1451,7 +1457,7 @@ function updateScoreAndBlackout(cleanFromBattery) {
   const carbonDelta = carbon * 0.3;
   state.breakdown.carbonPenalty += carbonDelta;
 
-  const threshold = getCityBlackoutThreshold(state.cityLevel);
+  const threshold = getEffectiveBlackoutThreshold();
   if (met) { state.consecutiveShortage = 0; } else { state.consecutiveShortage++; }
   state.blackoutActive = state.consecutiveShortage >= threshold;
 
@@ -1688,8 +1694,8 @@ function renderStatusTray() {
   const dn = dayNightRemaining();
   badges.push({ id: 'daynight', iconA: state.isDay ? '☀️' : '🌙', iconB: state.isDay ? '🌙' : '☀️', count: dn, level: dn <= 5 ? 'warning' : 'info', title: (state.isDay ? 'กลางวัน → กลางคืน' : 'กลางคืน → กลางวัน') });
 
-  if (state.consecutiveShortage >= 1 && state.consecutiveShortage < getCityBlackoutThreshold(state.cityLevel)) {
-    badges.push({ id: 'blackoutWarn', iconA: '⚠️', iconB: '🔴', count: getCityBlackoutThreshold(state.cityLevel) - state.consecutiveShortage, level: 'danger', title: 'เสี่ยง → ไฟดับ' });
+  if (state.consecutiveShortage >= 1 && state.consecutiveShortage < getEffectiveBlackoutThreshold()) {
+    badges.push({ id: 'blackoutWarn', iconA: '⚠️', iconB: '🔴', count: getEffectiveBlackoutThreshold() - state.consecutiveShortage, level: 'danger', title: 'เสี่ยง → ไฟดับ' });
   }
   if (state.blackoutActive) {
     badges.push({ id: 'blackoutActive', iconA: '🔴', iconB: null, count: null, level: 'danger', pulse: true, staticText: 'ไฟดับแล้ว!', title: 'ไฟดับแล้ว' });
@@ -2011,15 +2017,57 @@ function openLeaderboard(fromEnd) {
   syncLbTabs();
   syncLbPeriodTabs();
   renderLeaderboardView();
+  startLbCountdown();
 }
 function closeLeaderboard() {
   document.getElementById('leaderboardScreen').classList.add('hidden');
   document.getElementById(lbReturnScreen).classList.remove('hidden');
+  stopLbCountdown();
 }
 function selectLbDuration(sec) { lbViewDuration = sec; syncLbTabs(); renderLeaderboardView(); }
-function selectLbPeriod(p) { lbViewPeriod = p; syncLbPeriodTabs(); renderLeaderboardView(); }
+function selectLbPeriod(p) { lbViewPeriod = p; syncLbPeriodTabs(); renderLeaderboardView(); updateLbCountdownText(); }
 function syncLbTabs() { document.querySelectorAll('#lbDurationTabs .dur-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.sec) === lbViewDuration)); }
 function syncLbPeriodTabs() { document.querySelectorAll('#lbPeriodTabs .dur-btn').forEach(b => b.classList.toggle('selected', b.dataset.period === lbViewPeriod)); }
+
+function getNextDailyReset(now) {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+  if (now >= next) next.setDate(next.getDate() + 1);
+  return next;
+}
+function getNextWeeklyReset(now) {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+  const day = next.getDay();
+  let daysUntilMonday = (1 - day + 7) % 7;
+  if (daysUntilMonday === 0 && now >= next) daysUntilMonday = 7;
+  next.setDate(next.getDate() + daysUntilMonday);
+  return next;
+}
+function formatCountdown(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return h + ' ชม. ' + m + ' นาที';
+  if (m > 0) return m + ' นาที ' + s + ' วิ';
+  return s + ' วินาที';
+}
+let lbCountdownInterval = null;
+function startLbCountdown() {
+  stopLbCountdown();
+  updateLbCountdownText();
+  lbCountdownInterval = setInterval(updateLbCountdownText, 1000);
+}
+function stopLbCountdown() { if (lbCountdownInterval) { clearInterval(lbCountdownInterval); lbCountdownInterval = null; } }
+function updateLbCountdownText() {
+  const el = document.getElementById('lbResetCountdown');
+  if (!el) return;
+  if (lbViewPeriod === 'all') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const now = new Date();
+  const next = lbViewPeriod === 'daily' ? getNextDailyReset(now) : getNextWeeklyReset(now);
+  const label = lbViewPeriod === 'daily' ? 'เที่ยงวัน' : 'เที่ยงวันจันทร์';
+  el.textContent = '⏳ อันดับนี้จะรีเซ็ตในอีก ' + formatCountdown(next - now) + ' (' + label + ')';
+}
 
 async function renderLeaderboardView() {
   const ol = document.getElementById('lbViewList');
