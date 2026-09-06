@@ -6,6 +6,7 @@
 <title>⚡ VoltRush: บริหารพลังงานแบบสบายๆ</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="gacha.css">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -854,7 +855,12 @@ function getPlantTitle(level) { return level <= PLANT_TITLES.length ? PLANT_TITL
 function getCityTitle(level) { return level <= CITY_TITLES.length ? CITY_TITLES[level - 1] : 'อภิมหานคร Lv.' + level; }
 function getCityBuildings(level) { return CITY_BUILDINGS[Math.min(level, CITY_BUILDINGS.length) - 1]; }
 function getLevelMult(level) { return 1 + (level - 1) * 0.5; }
-function getPlantUpgradeCost(def, level) { const base = Math.max(80, def.cost); return Math.round(base * (0.85 + level * 0.7)); }
+function getPlantUpgradeCost(def, level) {
+  const base = Math.max(80, def.cost);
+  const raw = base * (0.85 + level * 0.7);
+  const discount = (typeof getGachaUpgradeDiscount === 'function') ? getGachaUpgradeDiscount() : 0;
+  return Math.round(raw * (1 - discount));
+}
 function getCityDemandMult(level) { return 1 + (level - 1) * 0.4; }
 function getCityScoreMult(level) { return 1 + (level - 1) * 0.3; }
 function getCityUpgradeCost(level) { return Math.round(300 * (1 + (level - 1) * 0.8)); }
@@ -863,7 +869,8 @@ function getCityBlackoutThreshold(level) { return Math.max(3, BLACKOUT_THRESHOLD
 function getEffectiveBlackoutThreshold() { return getCityBlackoutThreshold(state.cityLevel) + (state.elapsed < GRACE_PERIOD ? 3 : 0); }
 
 function getEffective(def, level) {
-  const mult = getLevelMult(level || 1);
+  const gachaBonus = (typeof getGachaBlueprintBonus === 'function') ? getGachaBlueprintBonus(def.key) : 0;
+  const mult = getLevelMult(level || 1) * (1 + gachaBonus);
   return {
     capacity: def.capacity !== undefined ? Math.round(def.capacity * mult) : undefined,
     dayCapacity: def.dayCapacity !== undefined ? Math.round(def.dayCapacity * mult) : undefined,
@@ -1403,7 +1410,7 @@ function checkHazardEvents() {
     const k = eligible[i];
     const p = state.plants[k];
     const eff = getEffective(PLANT_MAP[k], p.level);
-    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT * getCityHazardMult(state.cityLevel);
+    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT * getCityHazardMult(state.cityLevel) * (typeof getGachaHazardMult === 'function' ? getGachaHazardMult() : 1);
     if (Math.random() < chance) {
       const def = EVENT_DEFS[k];
       state.activeHazard = { key: k, timeLeft: def.duration, def: def };
@@ -1496,6 +1503,7 @@ function updateMoney() {
     if (b.mode === 'discharge') income += beff.dischargeIncome;
   }
   if (state.activeBuff && state.activeBuff.type === 'goldenHour') income *= 2;
+  income *= (typeof getGachaIncomeMult === 'function') ? getGachaIncomeMult() : 1;
   if (state.blackoutActive) income = 0;
   state.money = Math.max(0, state.money + income - expense);
 }
@@ -1726,11 +1734,13 @@ function renderPlantsPanel() {
       const moneyTag = p.on ? '<span class="money-tag">+' + net + '/วิ</span>' : '';
       const debuffTag = (p.debuff && p.debuff.type === 'reduced') ? '<span class="debuff-tag">-50% (' + p.debuff.timeLeft + 'วิ)</span>' : '';
       const upCost = getPlantUpgradeCost(def, p.level);
-      html += '<div class="plant-card ' + (p.on ? 'active' : '') + '" style="--accent:' + def.accent + ';--accent-glow:' + def.accent + '66">' +
-        '<div class="card-top"><div class="info"><span class="icon">' + def.icon + '</span><div>' +
+      const showIcon = (typeof getSkinIcon === 'function') ? getSkinIcon(def) : def.icon;
+      const showAccent = (typeof getSkinAccent === 'function') ? getSkinAccent(def) : def.accent;
+      html += '<div class="plant-card ' + (p.on ? 'active' : '') + '" style="--accent:' + showAccent + ';--accent-glow:' + showAccent + '66">' +
+        '<div class="card-top"><div class="info"><span class="icon">' + showIcon + '</span><div>' +
         '<div class="name">' + def.name + '<span class="level-tag">' + getPlantTitle(p.level) + '</span>' + riskTag + '</div>' +
         '</div></div>' +
-        '<div class="switch ' + (p.on ? 'on' : '') + '" id="switch-' + def.key + '" style="--accent:' + def.accent + '" onclick="togglePlant(\'' + def.key + '\')"><div class="knob"></div></div>' +
+        '<div class="switch ' + (p.on ? 'on' : '') + '" id="switch-' + def.key + '" style="--accent:' + showAccent + '" onclick="togglePlant(\'' + def.key + '\')"><div class="knob"></div></div>' +
         '</div>' +
         '<div class="card-bottom"><div class="output">' + p.output + ' MW' + moneyTag + debuffTag + '</div>' +
         '<div class="card-actions">' +
@@ -1952,6 +1962,7 @@ function endGame(disasterMessage) {
   const carbon = Math.round(bd.carbonPenalty);
   const blackout = Math.round(bd.blackoutPenalty);
   const final = currentScore();
+  if (typeof gachaAwardCrystals === 'function') gachaAwardCrystals(final);
 
   document.getElementById('finalScoreVal').textContent = final;
   document.getElementById('bdSatisfaction').textContent = sat;
@@ -2094,5 +2105,6 @@ function restartGame() {
   document.getElementById('startScreen').classList.remove('hidden');
 }
 </script>
+<script src="gacha.js"></script>
 </body>
 </html>
