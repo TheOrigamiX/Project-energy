@@ -7,7 +7,7 @@
      Backend.loadLeaderboard(sec, period)   Promise<Array | null>   (null = ใช้ localStorage แทน)
      sec: 180 | 300 | 600 | 1800 | 0 (ไม่จำกัดเวลา)     period: 'all' | 'daily' | 'weekly'
 ================================================================== */
-const Backend = (function () {
+const BackendFirebase = (function () {
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBHVM6bttnfPlctL7TwAFwAiW5Xs9qEFOM",
     authDomain: "energy-debe5.firebaseapp.com",
