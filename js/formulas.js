@@ -6,7 +6,7 @@ function getPlantTitle(level) { return level <= PLANT_TITLES.length ? PLANT_TITL
 function getCityTitle(level) { return level <= CITY_TITLES.length ? CITY_TITLES[level - 1] : 'อภิมหานคร Lv.' + level; }
 function getCityBuildings(level) { return CITY_BUILDINGS[Math.min(level, CITY_BUILDINGS.length) - 1]; }
 function getLevelMult(level) { return 1 + (level - 1) * 0.5; }
-function getPlantUpgradeCost(def, level) { const base = Math.max(80, def.cost); return Math.round(base * (0.85 + level * 0.7)); }
+function getPlantUpgradeCost(def, level) { const base = Math.max(180, def.cost); return Math.round(base * (0.85 + level * 0.7)); }
 function getCityDemandMult(level) { return 1 + (level - 1) * 0.4; }
 function getCityScoreMult(level) { return 1 + (level - 1) * 0.3; }
 function getCityUpgradeCost(level) { return Math.round(300 * (1 + (level - 1) * 0.8)); }

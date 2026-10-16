@@ -6,7 +6,7 @@ function dayNightRemaining() { const cycle = 50, half = 25; const phase = state.
 function updatePeakSchedule() {
   if (state.peakActive) {
     state.peakTimer--;
-    if (state.peakTimer <= 0) { state.peakActive = false; state.nextPeakIn = Math.max(4, Math.round((12 + Math.floor(Math.random() * 10)) / EVENT_FREQ_MULT)); }
+    if (state.peakTimer <= 0) { state.peakActive = false; state.nextPeakIn = Math.max(4, Math.round((12 + Math.floor(RNG.f('peak') * 10)) / EVENT_FREQ_MULT)); }
     return;
   }
   state.nextPeakIn--;
@@ -18,14 +18,14 @@ function updateWeatherSchedule() {
   if (state.nextWeatherIn <= 0) {
     state.weather = state.nextWeatherValue;
     state.nextWeatherValue = randomWeatherExcept(state.weather);
-    state.nextWeatherIn = Math.max(4, Math.round((10 + Math.floor(Math.random() * 8)) / EVENT_FREQ_MULT));
+    state.nextWeatherIn = Math.max(4, Math.round((10 + Math.floor(RNG.f('weather') * 8)) / EVENT_FREQ_MULT));
   }
 }
 
 function updateDemand() {
   state.prevDemand = state.demand;
   const mult = getCityDemandMult(state.cityLevel);
-  let base = 50 + 15 * Math.sin(state.elapsed / 35) + (Math.random() * 4 - 2);
+  let base = 50 + 15 * (Math.round(Math.sin(state.elapsed / 35) * 1000) / 1000) + (RNG.f('demand') * 4 - 2);
   if (state.peakActive) base += 30;
   base *= mult;
   state.demand = Math.max(Math.round(20 * mult), Math.round(base));
@@ -41,12 +41,12 @@ function updateBuffs() {
     return;
   }
   if (state.activeHazard) return;
-  if (Math.random() < 0.0035 * EVENT_FREQ_MULT) {
+  if (RNG.f('buff') < 0.0035 * EVENT_FREQ_MULT) {
     const keys = Object.keys(BUFF_DEFS);
-    const pick = keys[Math.floor(Math.random() * keys.length)];
+    const pick = keys[Math.floor(RNG.f('buff') * keys.length)];
     const def = BUFF_DEFS[pick];
     if (def.duration === 0) {
-      const amt = 80 + Math.floor(Math.random() * 70);
+      const amt = 80 + Math.floor(RNG.f('buff') * 70);
       state.money += amt;
       sndBuff();
       showToast(def.icon + ' ' + def.name + '! ได้รับ +' + amt + ' บาท');
@@ -80,9 +80,9 @@ function updatePlantHiccups() {
     }
     if (!p.on || p.cooldown > 0) return;
     if (state.activeHazard && state.activeHazard.key === def.key) return;
-    if (Math.random() < 0.0035 * EVENT_FREQ_MULT) {
-      const type = Math.random() < 0.5 ? 'outage' : 'reduced';
-      const dur = type === 'outage' ? (8 + Math.floor(Math.random() * 7)) : (10 + Math.floor(Math.random() * 9));
+    if (RNG.f('hiccup') < 0.0035 * EVENT_FREQ_MULT) {
+      const type = RNG.f('hiccup') < 0.5 ? 'outage' : 'reduced';
+      const dur = type === 'outage' ? (8 + Math.floor(RNG.f('hiccup') * 7)) : (10 + Math.floor(RNG.f('hiccup') * 9));
       p.debuff = { type: type, timeLeft: dur };
       if (type === 'outage') showToast(def.name + ' หยุดทำงานชั่วคราว (บำรุงรักษา) ' + dur + ' วิ');
       else showToast(def.name + ' ผลิตไฟลดลงชั่วคราวเหลือครึ่งหนึ่ง ' + dur + ' วิ');
@@ -103,7 +103,7 @@ function updatePlantOutputs() {
       if (state.activeBuff && state.activeBuff.type === 'solarBoost') b *= 1.6;
       p.output = Math.round(b);
     } else if (def.type === 'wind') {
-      state.windLevel += (Math.random() - 0.5) * 0.15;
+      state.windLevel += (RNG.f('wind') - 0.5) * 0.15;
       state.windLevel = Math.max(0, Math.min(1, state.windLevel));
       let range = [10, 22];
       if (state.weather === 'windy') range = [18, 32];
@@ -142,7 +142,7 @@ function checkHazardEvents() {
     const p = state.plants[k];
     const eff = getEffective(PLANT_MAP[k], p.level);
     const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT * getCityHazardMult(state.cityLevel);
-    if (Math.random() < chance) {
+    if (RNG.f('hazard') < Math.min(0.06, chance)) {
       const def = EVENT_DEFS[k];
       state.activeHazard = { key: k, timeLeft: def.duration, def: def };
       sndHazard();
@@ -184,7 +184,8 @@ function updateScoreAndBlackout(cleanFromBattery) {
   state.breakdown.satisfaction += satDelta;
 
   const clean = PLANT_DEFS.filter(d => d.carbonRate === 0).reduce((s, def) => s + state.plants[def.key].output, 0) + cleanFromBattery;
-  const cleanDelta = clean * 0.3 * scoreMult;
+  const served = Math.min(state.netSupply, state.demand);   // โบนัสสะอาดนับเฉพาะไฟที่ใช้จริง ผลิตเกินไม่ได้เพิ่ม
+  const cleanDelta = served * Math.min(1, clean / Math.max(1, state.netSupply)) * 0.25 * scoreMult;
   state.breakdown.cleanBonus += cleanDelta;
 
   const carbon = PLANT_DEFS.reduce((s, def) => {
@@ -192,7 +193,7 @@ function updateScoreAndBlackout(cleanFromBattery) {
     if (!p.on || !p.unlocked) return s;
     return s + getEffective(def, p.level).carbonRate;
   }, 0);
-  const carbonDelta = carbon * 0.3;
+  const carbonDelta = carbon * 0.8;
   state.breakdown.carbonPenalty += carbonDelta;
 
   const threshold = getEffectiveBlackoutThreshold();
@@ -234,7 +235,7 @@ function updateMoney() {
     if (b.mode === 'discharge') income += beff.dischargeIncome;
   }
   if (state.activeBuff && state.activeBuff.type === 'goldenHour') income *= 2;
-  if (state.blackoutActive) income = 0;
+  if (state.blackoutActive) income = Math.floor(income * 0.3);   // ไฟดับยังเหลือรายได้ 30% กันวงจรเลวร้าย
   state.money = Math.max(0, state.money + income - expense);
 }
 
@@ -250,9 +251,9 @@ function maybeShowRandomTip() {
 function currentScore() {
   if (state.prepping) return 0;
   const bd = state.breakdown;
-  const moneyBonus = state.money * 0.5;
-  const raw = bd.satisfaction + bd.cleanBonus + moneyBonus - bd.carbonPenalty - bd.blackoutPenalty;
-  return Math.max(0, Math.round(raw));
+  const raw = bd.satisfaction + bd.cleanBonus - bd.carbonPenalty - bd.blackoutPenalty;
+  const moneyBonus = state.finished ? Math.min(state.money * 0.5, Math.max(0, raw) * 0.1) : 0;   // เงินคิดตอนจบเท่านั้น เพดาน 10%
+  return Math.max(0, Math.round(raw + moneyBonus));
 }
 
 function gameTick() {
@@ -283,6 +284,7 @@ function gameTick() {
   const cleanFromBattery = computeSupply();
   updateScoreAndBlackout(cleanFromBattery);
   updateMoney();
+  if (state.hunt && huntTick()) return;
   maybeShowRandomTip();
 
   renderGame();

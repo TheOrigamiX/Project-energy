@@ -40,7 +40,9 @@ function runCountdown() {
 }
 
 function actuallyStartGame() {
+  RNG.seed(Date.now() & 0x7fffffff);
   state = freshState();
+  state.seed = RNG.value;
   gameInProgress = true;
   scoreSavedThisRound = false;
   document.getElementById('gameScreen').classList.remove('hidden');
@@ -55,8 +57,8 @@ function actuallyStartGame() {
   renderGame();
   gameTimerId = setInterval(gameTick, 1000);
   showToast("เกมเริ่มแล้ว! เดี๋ยวจะพาชมส่วนต่างๆ ในเกมก่อนนะ");
-  pauseGame();
-  startCoachTutorial();
+  if (pendingHunt) { pendingHunt = false; initHunt(); }
+  else { pauseGame(); startCoachTutorial(); }
   startBackgroundMusic();
   startShootingStars();
 }
@@ -84,6 +86,8 @@ function resumeGame() {
 function durationLabel() { if (state.infinite) return '∞ ไม่จำกัดเวลา'; return (TOTAL_TIME / 60) + ' นาที'; }
 
 function endGame(disasterMessage) {
+  if (state) state.finished = true;
+  if (state && state.hunt) { huntFinish(disasterMessage); return; }
   document.getElementById('gameScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.remove('hidden');
   document.getElementById('skyBackground').classList.add('hidden');

@@ -25,9 +25,9 @@ function getPeriodStart(period, now) {
 
 function randomWeatherExcept(exclude) {
   const options = ['clear', 'clear', 'cloudy', 'windy', 'calm'];
-  let w = options[Math.floor(Math.random() * options.length)];
+  let w = options[Math.floor(RNG.f('weather') * options.length)];
   let tries = 0;
-  while (w === exclude && tries < 5) { w = options[Math.floor(Math.random() * options.length)]; tries++; }
+  while (w === exclude && tries < 5) { w = options[Math.floor(RNG.f('weather') * options.length)]; tries++; }
   return w;
 }
 
