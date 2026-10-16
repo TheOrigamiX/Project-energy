@@ -11,7 +11,10 @@ js/config.js          ค่าตั้งต้น ตัวแปรตั้
 js/data.js            ข้อมูลเกม (โรงไฟฟ้า เหตุการณ์ buff tips)
 js/formulas.js        สูตรระดับ ค่าอัพเกรด ตัวคูณเมือง
 js/util.js            ฟังก์ชันช่วย + ขอบเขตช่วงอันดับ (เวลาไทย UTC+7)
-js/backend/firebase.js  จุดเชื่อม backend (ตอนนี้ Firebase) ดูสัญญาด้านล่าง
+js/rng.js             RNG ใส่ seed ได้ แยกสตรีมตามชนิดเหตุการณ์
+js/backend/firebase.js, supabase.js, index.js   จุดเชื่อม backend (เลือก Supabase ถ้าตั้งค่าแล้ว ไม่งั้น Firebase)
+js/hunt.js            ตัวละครถาวร การล่า ฐานทัพ ของ ตีบวก (L1)
+supabase/schema.sql   ตาราง leaderboard + RLS
 js/audio.js           เสียงและเพลง
 js/state.js           state หลัก freshState()
 js/engine.js          ตัวจำลองเกม ทำงานทุก tick
@@ -42,3 +45,14 @@ firebase/database.rules.json   Rules สำหรับ Realtime Database
 ## Firebase Rules
 
 `firebase/database.rules.json` ต้องนำไปวางใน Firebase Console เอง ถ้าฐานข้อมูลมี path อื่นนอกจาก `leaderboards` ให้รวมเข้ากับ rules เดิม เพดานคะแนน 5,000,000 เป็นค่าเผื่อกว้างๆ ควรปรับตามคะแนนจริงสูงสุดของแต่ละโหมด Rules ช่วยกันข้อมูลผิดรูปแบบ แต่ไม่ช่วยตรวจว่าคะแนนเล่นมาจริง การตรวจจริงต้องทำฝั่ง server
+
+## โหมดล่า (L1 ตาม GDD)
+
+กดปุ่ม "ฐานทัพ / ออกล่า" ในหน้าแรก. ใช้เครื่องยนต์โรงไฟฟ้าเดิม: ไฟที่ผลิตได้ (netSupply) แปลงเป็นความเสียหายต่อมอนสเตอร์ ไฟดับทำให้ยิงอ่อนและโล่เมืองแตกเร็ว. เมืองล่ม = เสีย EXP 3%. ข้อมูลตัวละครเก็บใน localStorage (`voltrushProfileV1`) ยังเป็นข้อมูลฝั่งเครื่อง แก้ได้ จึงยังไม่ใช่ระบบแข่งขันจริง ต้องย้ายขึ้น server ตามหัวข้อ 27 ของ GDD ก่อนมีตลาดหรืออันดับตัวละคร.
+
+ค่าดรอป `DROP_ITEM` และ `DROP_SCROLL` ใน `js/hunt.js` ตั้งสูงกว่า GDD เพื่อทดสอบ (0.03 และ 0.05 แทน 0.008 และ 0.04) ปรับลงก่อนปล่อยจริง.
+
+## ตั้งค่า Supabase
+
+1. รัน `supabase/schema.sql` ใน SQL Editor.
+2. ใส่ `SUPABASE_URL` และ `SUPABASE_ANON_KEY` ใน `js/backend/supabase.js`.
