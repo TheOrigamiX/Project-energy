@@ -6,7 +6,11 @@
 <title>⚡ VoltRush: บริหารพลังงานแบบสบายๆ</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/effects.css">
+<link rel="stylesheet" href="css/hud.css">
+
 </head>
 <body>
 
@@ -63,6 +67,7 @@
     </div>
 
     <div class="start-actions">
+        <button class="secondary-btn room-btn" onclick="openRoom()">🎮 เล่นกับเพื่อน / ทัวร์นาเมนต์</button>
       <button class="primary-btn" onclick="startGame()">🚀 เริ่มเกม</button>
     </div>
     <div class="start-actions" style="margin-top:10px;">
@@ -237,26 +242,44 @@
   </div>
 </div>
 
+<div id="liveRank" class="hidden"></div>
+<div id="roomScreen" class="screen hidden"><div class="start-card room-card">
+  <h1>🎮 ห้องเล่นกับเพื่อน</h1>
+  <p class="subtitle">ทุกคนเจอเหตุการณ์ชุดเดียวกัน แข่งกันแฟร์ๆ สะสมแต้มตามอันดับทุกรอบ</p>
+  <div id="roomEntry">
+    <input type="text" id="roomName" class="room-input" placeholder="ชื่อของคุณ" maxlength="16">
+    <div class="room-row"><label>จำนวนรอบ <select id="roomRounds" class="room-input"><option value="1">1</option><option value="3" selected>3</option><option value="5">5</option></select></label>
+    <label>เวลา/รอบ <select id="roomDur" class="room-input"><option value="120">2 นาที</option><option value="180" selected>3 นาที</option><option value="300">5 นาที</option></select></label></div>
+    <button class="primary-btn" onclick="createRoom()">➕ สร้างห้อง</button>
+    <div class="room-or">หรือ</div>
+    <div class="room-row"><input type="text" id="roomCode" class="room-input" placeholder="รหัสห้อง 4 ตัว" maxlength="4" style="text-transform:uppercase"><button class="secondary-btn" onclick="joinRoom()">เข้าห้อง</button></div>
+    <button class="secondary-btn" style="margin-top:12px" onclick="leaveRoom()">⬅ กลับ</button>
+  </div>
+  <div id="roomLobby" class="hidden">
+    <div class="room-code" id="roomCodeBig">----</div>
+    <button class="secondary-btn" onclick="copyRoom()">🔗 คัดลอกลิงก์เชิญเพื่อน</button>
+    <div class="room-info" id="roomInfo"></div>
+    <ol id="roomPlayers" class="room-players"></ol>
+    <div class="room-msg" id="roomMsg"></div>
+    <div class="start-actions">
+      <button class="primary-btn" id="roomStartBtn" onclick="hostStart()">▶ เริ่ม</button>
+      <button class="secondary-btn hidden" id="roomForceBtn" onclick="hostForceEnd()">⏭ จบรอบทันที</button>
+      <button class="secondary-btn" onclick="leaveRoom()">🚪 ออกจากห้อง</button>
+    </div>
+  </div>
+</div></div>
 <div id="toastContainer"></div>
 
 <script src="js/config.js"></script>
+<script src="js/backend.js"></script>
 <script src="js/data.js"></script>
-<script src="js/formulas.js"></script>
-<script src="js/rng.js"></script>
-<script src="js/util.js"></script>
-<script src="js/backend/firebase.js"></script>
-<script src="js/backend/supabase.js"></script>
-<script src="js/backend/index.js"></script>
 <script src="js/audio.js"></script>
-<script src="js/state.js"></script>
+<script src="js/coach.js"></script>
 <script src="js/engine.js"></script>
-<script src="js/actions.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/tutorial.js"></script>
-<script src="js/sky.js"></script>
 <script src="js/render.js"></script>
 <script src="js/leaderboard.js"></script>
-<script src="js/hunt.js"></script>
-<script src="js/flow.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/hud.js"></script>
 </body>
 </html>
