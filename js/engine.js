@@ -33,7 +33,7 @@ function freshState() {
 
 function startGame() {
   TOTAL_TIME = selectedDuration;
-  EVENT_FREQ_MULT = EVENT_FREQ_OPTIONS[selectedFreqKey];
+  EVENT_FREQ_MULT = 1;
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
   document.getElementById('countdownScreen').classList.remove('hidden');
@@ -313,7 +313,7 @@ function updateWeatherSchedule() {
 
 function updateDemand() {
   state.prevDemand = state.demand;
-  const mult = getCityDemandMult(state.cityLevel);
+  const mult = getCityDemandMult(state.cityLevel) * (1 + 0.04 * (state.wave || 0));
   let base = 50 + 15 * Math.sin(state.elapsed / 35) + (rng() * 4 - 2);
   if (state.peakActive) base += 30;
   base *= mult;
@@ -430,7 +430,7 @@ function checkHazardEvents() {
     const k = eligible[i];
     const p = state.plants[k];
     const eff = getEffective(PLANT_MAP[k], p.level);
-    const chance = 0.004 * eff.mult * safeMult * EVENT_FREQ_MULT * getCityHazardMult(state.cityLevel);
+    const chance = 0.004 * eff.mult * safeMult * Math.sqrt(EVENT_FREQ_MULT) * getCityHazardMult(state.cityLevel);
     if (rng() < chance) {
       const def = EVENT_DEFS[k];
       state.activeHazard = { key: k, timeLeft: def.duration, def: def };

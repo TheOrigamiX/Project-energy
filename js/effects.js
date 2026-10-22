@@ -67,4 +67,4 @@ _spend('upgradeCity', 40, ['#ffd166', '#38b6ff', '#fff'], true);
 wrap('explodeNow', (o, a) => { fxShake(); fxBurst(innerWidth / 2, innerHeight / 2, 90, ['#ff6b6b', '#ff9f4a', '#ffd166']); return o(...a); });
 wrap('sndHazard', (o, a) => { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); return o(...a); });
 wrap('sndBlackout', (o, a) => { if (navigator.vibrate) navigator.vibrate(400); return o(...a); });
-wrap('endGame', (o, a) => { closeSheets(); const r = o(...a); if (!a[0]) setTimeout(fxConfetti, 300); return r; });
+wrap('endGame', (o, a) => { const r = o(...a); hudHide(); if (!a[0]) setTimeout(fxConfetti, 300); return r; });

@@ -6,13 +6,8 @@ const BLACKOUT_THRESHOLD = 6;
 const PREP_TIME = 15;
 const GRACE_PERIOD = 22;
 
-const EVENT_FREQ_OPTIONS = { low: 0.5, normal: 1, high: 1.8 };
-let selectedFreqKey = 'normal';
-let EVENT_FREQ_MULT = 1;
-function selectFreq(key) {
-  selectedFreqKey = key;
-  document.querySelectorAll('#freqOptions .dur-btn').forEach(b => b.classList.toggle('selected', b.dataset.freq === key));
-}
+let selectedFreqKey = 'normal'; // เลิกใช้แล้ว (ความยากตามเวลาแทน)
+let EVENT_FREQ_MULT = 1; // ปรับอัตโนมัติตาม wave ใน difficulty.js
 
 const tips = {
   coal: "โรงไฟฟ้าถ่านหิน: ผลิตไฟฟ้าได้เยอะและเสถียร แต่ปล่อยคาร์บอนไดออกไซด์สูงมาก มีผลต่อภาวะโลกร้อน",

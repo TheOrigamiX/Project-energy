@@ -1,9 +1,13 @@
 /* ---------- hand-holding coach-mark tutorial (points at real UI) ---------- */
 const COACH_STEPS = [
-  { target: 'plantsPanel', title: 'แผงควบคุมโรงไฟฟ้า', body: 'นี่คือพื้นที่เปิด-ปิดโรงไฟฟ้าทั้งหมดของคุณ' },
-  { target: 'switch-coal', title: 'สวิตช์เปิด-ปิด', body: 'ลองแตะสวิตช์นี้ดูได้เลยตอนนี้ เพื่อเปิดโรงไฟฟ้าถ่านหิน!' },
-  { target: 'infobtn-coal', title: 'ดูรายละเอียด (ⓘ)', body: 'กดปุ่มนี้เพื่อดูข้อมูลเชิงลึกของโรงไฟฟ้านี้ เกมจะหยุดชั่วคราวให้อ่านสบายๆ' },
-  { target: 'upgradebtn-coal', title: 'อัพเกรด (⬆️)', body: 'กดปุ่มนี้เพื่ออัพเกรดโรงไฟฟ้าให้ผลิตไฟและสร้างรายได้มากขึ้น ไม่จำกัดระดับ' },
+  { target: 'hudMeter', title: 'มิเตอร์ไฟ', body: 'แถบนี้เทียบไฟที่ผลิตกับที่เมืองต้องการ เส้นขาวคือจุดที่ไฟพอดี ถ้าแถบเป็นสีแดงคือไฟไม่พอ ต้องรีบเพิ่มไฟ' },
+  { target: 'plantStrip', title: 'ชิปโรงไฟฟ้า', body: 'แตะชิปเพื่อเปิด/ปิดโรงไฟฟ้าได้ทันที เส้นไฟที่วิ่งไปเมืองจะหนาขึ้นเมื่อโรงผลิตได้มาก' },
+  { target: 'dock-plants', title: 'ปุ่มโรงไฟฟ้า', body: 'กดปุ่มนี้เพื่อเปิดแผงซื้อและอัพเกรดโรงไฟฟ้า (ปุ่มลัดคีย์ 1) ลากที่จับด้านบนแผงลงเพื่อปิด' },
+  { sheet: 'plants', target: 'switch-coal', title: 'สวิตช์เปิด-ปิด', body: 'ลองแตะสวิตช์นี้ดูได้เลยตอนนี้ เพื่อเปิดโรงไฟฟ้าถ่านหิน!' },
+  { sheet: 'plants', target: 'infobtn-coal', title: 'ดูรายละเอียด (ⓘ)', body: 'กดปุ่มนี้เพื่อดูข้อมูลเชิงลึกของโรงไฟฟ้านี้ เกมจะหยุดชั่วคราวให้อ่านสบายๆ' },
+  { sheet: 'plants', target: 'upgradebtn-coal', title: 'อัพเกรด (⬆️)', body: 'กดปุ่มนี้เพื่ออัพเกรดโรงไฟฟ้าให้ผลิตไฟและสร้างรายได้มากขึ้น ไม่จำกัดระดับ' },
+  { target: 'dock-battery', title: 'ปุ่มแบตเตอรี่ลัด', body: 'กดวนโหมด ปิด → ชาร์จ → จ่ายไฟ ชาร์จตอนไฟเหลือ จ่ายตอนไฟขาด' },
+  { target: 'forecastChip', title: 'พยากรณ์และ Wave', body: 'นับถอยหลังถึง Peak และสภาพอากาศถัดไป พร้อม Wave ปัจจุบัน ยิ่งเล่นนานยิ่งยากขึ้น ข้อความสำคัญจะขึ้นใต้แถบนี้ และปุ่ม 🚨 สีแดงจะลอยขึ้นตอนโรงมีปัญหา กดเพื่อปิดทันที' },
   { target: 'moneyChipPanel', title: 'เงินของคุณ', body: 'เงินที่ใช้ปลดล็อกและอัพเกรดโรงไฟฟ้าแสดงตรงนี้เด่นชัด' },
   { target: 'statusTray', title: 'แผงสถานะ', body: 'กล่องเหล่านี้บอกเหตุการณ์ปัจจุบัน ไปจนถึงถัดไป พร้อมเวลานับถอยหลัง แตะเพื่อดูรายละเอียด' },
   { target: 'gaugeSection', title: 'มาตรวัดประสิทธิภาพ', body: 'วงกลมนี้เทียบกำลังผลิตกับความต้องการไฟฟ้า สีเขียวเต็มวง แปลว่าพอ ส่วนสีแดงคือไม่พอ' },
@@ -24,18 +28,21 @@ function endCoachTutorial() {
   document.getElementById('coachTooltip').classList.add('hidden');
   window.removeEventListener('resize', repositionCoach);
   window.removeEventListener('scroll', repositionCoach, true);
+  closeSheets();
   resumeGame();
 }
 function coachNext() { sndCoachStep(); if (coachIndex < COACH_STEPS.length - 1) { coachIndex++; showCoachStep(coachIndex); } else { endCoachTutorial(); } }
 function coachSkip() { endCoachTutorial(); }
 function showCoachStep(i) {
   const step = COACH_STEPS[i];
+  if (step.sheet) openSheet(step.sheet); else closeSheets();
   const el = document.getElementById(step.target);
+  if ((!el || !el.getClientRects().length) && i < COACH_STEPS.length - 1) { coachIndex = i + 1; return showCoachStep(coachIndex); }
   document.getElementById('coachTitle').textContent = step.title;
   document.getElementById('coachBody').textContent = step.body;
   document.getElementById('coachProgress').textContent = (i + 1) + ' / ' + COACH_STEPS.length;
   document.getElementById('coachNextBtn').textContent = (i === COACH_STEPS.length - 1) ? 'เริ่มเล่นเลย' : 'ถัดไป ➡';
-  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => positionCoach(el), 260); }
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => positionCoach(el), step.sheet ? 520 : 260); }
 }
 function positionCoach(el) {
   const r = el.getBoundingClientRect();
