@@ -1,0 +1,45 @@
+/* ===== v2 UI + animation ===== */
+@keyframes screenIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes shimmer{to{background-position:200% 0}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.35);color:#fff}100%{transform:scale(1)}}
+@keyframes alertPulse{0%,100%{box-shadow:inset 0 0 0 rgba(255,60,60,0)}50%{box-shadow:inset 0 0 90px rgba(255,60,60,.45)}}
+@keyframes liIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@keyframes sweep{from{transform:translateX(-120%) skewX(-20deg)}to{transform:translateX(260%) skewX(-20deg)}}
+.screen:not(.hidden){animation:screenIn .55s cubic-bezier(.2,.8,.2,1)}
+.start-card,.end-card{backdrop-filter:blur(12px);animation:fadeUp .7s both}
+.start-card h1{background-size:200% 100%;background-image:linear-gradient(90deg,#ffd166,#ff6b6b,#38b6ff,#ffd166);animation:shimmer 6s linear infinite}
+.main-grid .panel,.top-bar,.status-panel{backdrop-filter:blur(8px);animation:fadeUp .6s both}
+.main-grid .panel:nth-child(2){animation-delay:.1s}.main-grid .panel:nth-child(3){animation-delay:.2s}
+.panel,.plant-card,.battery-card{transition:transform .2s ease,box-shadow .25s ease,border-color .25s ease}
+.plant-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.35)}
+button{transition:transform .15s ease,filter .2s ease,box-shadow .2s ease}
+button:active:not(:disabled){transform:scale(.94)}
+button:focus-visible,.switch:focus-visible{outline:3px solid #7bdff2;outline-offset:2px}
+button.primary-btn,.buy-btn{position:relative;overflow:hidden}
+button.primary-btn::after,.buy-btn::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:rgba(255,255,255,.45);transform:translateX(-120%) skewX(-20deg)}
+button.primary-btn:hover::after,.buy-btn:hover:not(:disabled)::after{animation:sweep .7s}
+.room-btn{animation:floaty 3s ease-in-out infinite}
+.dur-btn{transition:transform .15s,background .25s}.dur-btn:hover{transform:translateY(-2px)}
+.toast{backdrop-filter:blur(10px)}
+.countdown-num{animation:pop .8s ease}
+#scoreTopVal.bump{display:inline-block;animation:bump .35s ease}
+#comboChip{transition:all .3s;color:#ffb347}#comboChip.hot{background:rgba(255,120,40,.3);box-shadow:0 0 14px rgba(255,140,60,.7);animation:pulseBg 1s infinite}
+#gameShell.hazard-alert .top-bar{border-color:#ff6b6b;animation:alertPulse .8s infinite}
+#gameShell.hazard-alert::before{content:'';position:fixed;inset:0;z-index:5;pointer-events:none;animation:alertPulse .8s infinite}
+#gameShell.blackout::after{content:'';position:fixed;inset:0;z-index:4;pointer-events:none;background:rgba(0,0,0,.35)}
+.city-progress-fill,.battery-bar-fill{position:relative;overflow:hidden}
+.city-progress-fill::after,.battery-bar-fill::after{content:'';position:absolute;inset:0;width:35%;background:rgba(255,255,255,.35);animation:sweep 2.2s linear infinite}
+.leaderboard li,.room-players li{animation:liIn .4s both}
+.leaderboard li:nth-child(2),.room-players li:nth-child(2){animation-delay:.06s}.leaderboard li:nth-child(3),.room-players li:nth-child(3){animation-delay:.12s}.leaderboard li:nth-child(n+4){animation-delay:.18s}
+.room-card{max-width:520px}.room-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#e6ecf7;border-radius:12px;padding:10px 12px;font-size:.95rem;margin-bottom:10px}
+.room-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px}.room-row label{flex:1;font-size:.78rem;color:#9fb3d1;text-align:left}.room-row .room-input{margin-bottom:0}
+.room-or{color:#6f83a8;margin:10px 0;font-size:.8rem}
+.room-code{font-size:2.6rem;font-weight:900;letter-spacing:10px;color:#ffd166;text-shadow:0 0 24px rgba(255,209,102,.6);margin:6px 0;animation:pop .6s ease}
+.room-info{color:#9fb3d1;font-size:.82rem;margin:10px 0}
+.room-players{text-align:left;list-style:none;padding:0;margin:0 0 12px}.room-players li{background:rgba(255,255,255,.06);border-radius:12px;padding:9px 14px;margin-bottom:6px;font-size:.88rem}
+.room-msg{color:#6ee7a8;font-weight:800;min-height:20px;margin-bottom:8px}
+#liveRank{position:fixed;top:10px;right:10px;z-index:900;background:rgba(14,20,38,.9);border:1px solid rgba(120,160,255,.3);border-radius:12px;padding:8px 12px;font-size:.74rem;min-width:130px;backdrop-filter:blur(8px);animation:fadeUp .4s}
+#liveRank div{display:flex;justify-content:space-between;gap:10px}#liveRank span{color:#ffd166;font-weight:800}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
