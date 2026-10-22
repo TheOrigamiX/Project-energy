@@ -39,3 +39,17 @@ button::before{content:'';position:absolute;inset:0;background:radial-gradient(9
 button:hover::before{opacity:1}
 .ripple{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;animation:rip .65s ease-out forwards}
 @keyframes rip{to{transform:scale(18);opacity:0}}
+/* ===== v4: พยากรณ์ / แจ้งเตือน / wave / grip / แบต ===== */
+#forecastChip{font-size:.85rem;font-weight:800;padding:5px 14px;color:#9fb3d1;background:rgba(14,20,38,.9);border-radius:12px;text-align:center;transition:color .3s,box-shadow .3s}
+#forecastChip.hot{color:#ffd166;box-shadow:0 0 14px rgba(255,209,102,.5)}
+#alertBar{display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.alert-item{padding:7px 14px;border-radius:12px;background:rgba(30,44,80,.96);border-left:4px solid #ffd166;font-size:.88rem;font-weight:700;animation:alertIn .35s both;transition:opacity .4s,transform .4s}
+.alert-item.out{opacity:0;transform:translateX(30px)}
+@keyframes alertIn{from{opacity:0;transform:translateY(-12px)}}
+.wave-banner{position:fixed;left:50%;top:22%;z-index:1650;pointer-events:none;font-size:2.4rem;font-weight:900;color:#ff9f4a;text-shadow:0 0 30px rgba(255,120,40,.9),0 3px 10px #000;text-align:center;animation:waveIn 2.4s ease both}
+.wave-banner small{display:block;font-size:1rem;color:#fff}
+@keyframes waveIn{0%{opacity:0;transform:translate(-50%,0) scale(.5)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}25%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+#dock{width:min(560px,calc(100% - 16px))}#dock button{min-width:0;flex:1;padding:0 10px}
+#dock button.bat-charge{background:linear-gradient(135deg,#38b6ff,#6ee7a8)}#dock button.bat-discharge{background:linear-gradient(135deg,#ffd166,#ff7b54)}#dock button.bat-off{background:#39435f;color:#e6ecf7}
+.sheet-grip{position:sticky;top:0;width:56px;height:6px;padding:12px 0;margin:0 auto 6px;box-sizing:content-box;background:rgba(255,255,255,.3);background-clip:content-box;border-radius:3px;touch-action:none;cursor:grab;z-index:2}
+#coachSpotlight{z-index:1700!important}#coachTooltip{z-index:1710!important}
