@@ -1,13 +1,5 @@
-/* ตั้งค่าที่นี่: backend = 'firebase' หรือ 'supabase' */
-const BACKEND_TYPE = 'firebase';
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBHVM6bttnfPlctL7TwAFwAiW5Xs9qEFOM",
-  authDomain: "energy-debe5.firebaseapp.com",
-  databaseURL: "https://energy-debe5-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "energy-debe5",
-  storageBucket: "energy-debe5.firebasestorage.app",
-  messagingSenderId: "802290003784",
-  appId: "1:802290003784:web:6c3c776f13d372874b8d7d",
-  measurementId: "G-T1KXRYCEQF"
+/* ตั้งค่า Supabase (anon key ออกแบบให้เปิดเผยได้ ความปลอดภัยอยู่ที่ RLS ใน supabase.sql) */
+const SUPABASE_CONFIG = {
+  url: 'https://paiendfzrcwkxmypkugu.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaWVuZGZ6cmN3a3hteXBrdWd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MDIzMjUsImV4cCI6MjEwODI3ODMyNX0.Wke0XL0dCm8T01hOMXModzeFV2LTccdzaKLWP-JxucE'
 };
-const SUPABASE_CONFIG = { url: '', anonKey: '' };

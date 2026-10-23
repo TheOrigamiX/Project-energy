@@ -55,7 +55,7 @@ function hudRender() {
   const bt = state.battery, bb = byId('dock-battery'); bb.className = bt.unlocked ? 'bat-' + bt.mode : 'hidden';
   if (bt.unlocked) bb.textContent = ({ off: '🔋 ปิด', charge: '⚡ ชาร์จ', discharge: '🔌 จ่ายไฟ' })[bt.mode] + ' ' + Math.round(bt.current / getBatteryEffective(bt.level).capacity * 100) + '%';
   const fc = byId('forecastChip'), pk = state.peakActive ? '⚡ Peak เหลือ ' + state.peakTimer + ' วิ' : '⏱ Peak อีก ' + state.nextPeakIn + ' วิ';
-  fc.textContent = pk + '  •  🌦 อากาศเปลี่ยนอีก ' + state.nextWeatherIn + ' วิ  •  🌊 Wave ' + (state.wave || 0);
+  fc.textContent = pk + '  •  🌦 อากาศเปลี่ยนอีก ' + state.nextWeatherIn + ' วิ  •  🌊 Wave ' + (state.wave || 0) + '  •  ' + curMap().n + (state.boss ? '  •  ' + BOSS[state.boss.t].n + ' ' + state.boss.left + ' วิ' : '');
   fc.classList.toggle('hot', !!state.peakActive || state.nextPeakIn <= 5);
   hudStrip(); fxFlow();
 }
@@ -76,4 +76,5 @@ function hudHide() {
   const f = byId('flowSvg'); if (f) f.innerHTML = '';
   document.querySelectorAll('.fx-float,.wave-banner').forEach(e => e.remove());
   const al = byId('alertBar'); if (al) al.innerHTML = '';
+  if (typeof hideCards === 'function') hideCards(); const gc = byId('goalChip'); if (gc) gc.remove();
 }

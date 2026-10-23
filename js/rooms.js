@@ -3,12 +3,12 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 const byId=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROOM={code:null,data:null,ref:null,started:0,lastPush:-1};
-const PID=(()=>{let v=localStorage.getItem('voltrushPid');if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem('voltrushPid',v);}return v;})();
+let PID='';
 const RANK_PTS=[10,7,5,3,2,1];
 function openRoom(){
   if(!DB_ENABLED){showToast('ต้องเชื่อมฐานข้อมูลก่อนจึงเล่นห้องได้');return;}
   byId('startScreen').classList.add('hidden');byId('roomScreen').classList.remove('hidden');
-  byId('roomName').value=localStorage.getItem('voltrushName')||'';
+  byId('roomName').value=AUTH.name||'';byId('roomName').disabled=true;
 }
 function roomPlayerName(){const n=(byId('roomName').value.trim()||'ผู้เล่น').slice(0,16);localStorage.setItem('voltrushName',n);return n;}
 async function createRoom(){
@@ -26,7 +26,7 @@ async function joinRoom(code,name){
   if(d.status==='playing'&&!mine){showToast('รอบนี้เริ่มไปแล้ว รอรอบถัดไปนะ');return;}
   if(!mine&&Object.keys(d.players||{}).length>=4){showToast('ห้องเต็ม (สูงสุด 4 คน)');return;}
   const me=ref.child('players/'+PID);
-  if(!mine)await me.set({name:name,live:0,done:true});else await me.update({name:name});
+  if(!mine)await me.set({name:name,av:AUTH.avatar,tr:AUTH.p?AUTH.p.trophies:0,live:0,done:true});else await me.update({name:name,av:AUTH.avatar,tr:AUTH.p?AUTH.p.trophies:0});
   me.child('done').onDisconnect().set(true);
   ROOM.code=code;ROOM.ref=ref;ROOM.started=0;
   ref.on('value',sn=>{ROOM.data=sn.val();onRoom();});
@@ -41,13 +41,13 @@ function onRoom(){
 }
 function startRoomRound(r){
   byId('roomScreen').classList.add('hidden');selectedDuration=r.duration;selectedFreqKey='normal';
-  rng=mulberry32((r.seed||1)+r.round*7919);startGame();
+  rng=mulberry32((r.seed||1)+r.round*7919);CUR_MAP=((r.seed||1)+r.round)%MAPS.length;startGame();
 }
 function hostStart(){
   const r=ROOM.data;if(!r||r.host!==PID)return;
   const fin=r.status==='finished',b='rooms/'+ROOM.code+'/',o={};
   o[b+'status']='playing';o[b+'round']=fin?1:(r.round||0)+1;o[b+'seed']=1+Math.floor(Math.random()*1e9);
-  Object.keys(r.players||{}).forEach(k=>{o[b+'players/'+k+'/done']=false;o[b+'players/'+k+'/live']=0;if(fin)o[b+'players/'+k+'/scores']=null;});
+  Object.keys(r.players||{}).forEach(k=>{o[b+'players/'+k+'/done']=!!((r.players[k]||{}).bot);o[b+'players/'+k+'/live']=0;if(fin)o[b+'players/'+k+'/scores']=null;});
   DB.ref().update(o);
 }
 function hostForceEnd(){const r=ROOM.data;if(r&&r.host===PID)ROOM.ref.update({status:r.round>=r.rounds?'finished':'between'});}
@@ -56,17 +56,17 @@ function roomSubmit(){
   o[b+'done']=true;o[b+'live']=f;o[b+'scores/r'+r.round]=f;DB.ref().update(o);
 }
 function standings(r){
-  const ps=r.players||{},ids=Object.keys(ps),pts={};ids.forEach(k=>pts[k]=0);
-  for(let i=1;i<=(r.round||0);i++){
+  const ps=JSON.parse(JSON.stringify(r.players||{})),nr=r.status==='playing'?(r.round||0)-1:(r.round||0);Object.values(ps).forEach(p=>{if(p.bot){p.scores={};for(let j=1;j<=nr;j++)p.scores['r'+j]=Math.round(r.duration*14*p.skill);}});const ids=Object.keys(ps),pts={};ids.forEach(k=>pts[k]=0);
+  for(let i=1;i<=nr;i++){
     ids.filter(k=>ps[k].scores&&ps[k].scores['r'+i]!==undefined).sort((a,b)=>ps[b].scores['r'+i]-ps[a].scores['r'+i]).forEach((k,n)=>pts[k]+=RANK_PTS[n]||1);
   }
-  return ids.map(k=>{const p=ps[k],sc=p.scores||{};return{id:k,name:p.name,pts:pts[k],cur:sc['r'+r.round],live:p.live||0,total:Object.values(sc).reduce((t,v)=>t+v,0)};}).sort((a,b)=>b.pts-a.pts||b.total-a.total);
+  return ids.map(k=>{const p=ps[k],sc=p.scores||{};return{id:k,av:p.av,tr:p.tr,name:p.name,pts:pts[k],cur:sc['r'+r.round],live:liveOf(p,r),total:Object.values(sc).reduce((t,v)=>t+v,0)};}).sort((a,b)=>b.pts-a.pts||b.total-a.total);
 }
 function renderRoom(r){
   const host=r.host===PID,st=r.status,list=standings(r);
   byId('roomInfo').textContent='รอบ '+(r.round||0)+'/'+r.rounds+' • '+(r.duration/60)+' นาที/รอบ • '+({lobby:'รอเริ่ม',playing:'กำลังเล่น',between:'จบรอบ',finished:'จบทัวร์นาเมนต์'}[st]||'');
   const ol=byId('roomPlayers');ol.innerHTML='';
-  list.forEach((p,i)=>{const li=document.createElement('li');li.textContent=(['🥇','🥈','🥉'][i]||'#'+(i+1))+' '+p.name+(p.id===PID?' (คุณ)':'')+' — '+p.pts+' แต้ม'+(p.cur!==undefined?' • รอบนี้ '+p.cur:(st==='playing'?' • กำลังเล่น '+p.live:''));ol.appendChild(li);});
+  list.forEach((p,i)=>{const li=document.createElement('li');li.textContent=(['🥇','🥈','🥉'][i]||'#'+(i+1))+' '+p.name+(p.id===PID?' (คุณ)':'')+' — '+p.pts+' แต้ม'+(p.cur!==undefined?' • รอบนี้ '+p.cur:(st==='playing'?' • กำลังเล่น '+p.live:''));li.prepend(avatarEl(p.av,26,p.tr));ol.appendChild(li);});
   const b=byId('roomStartBtn');b.classList.toggle('hidden',!host||st==='playing');
   b.textContent=st==='lobby'?'▶ เริ่มรอบที่ 1':st==='finished'?'🔁 เริ่มทัวร์นาเมนต์ใหม่':'▶ เริ่มรอบที่ '+((r.round||0)+1);
   byId('roomForceBtn').classList.toggle('hidden',!(host&&st==='playing'));
@@ -76,7 +76,7 @@ function renderLive(r){
   const el=byId('liveRank');
   if(!ROOM.code||!gameInProgress){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
-  el.innerHTML='<b>🏁 อันดับสด</b>'+Object.values(r.players||{}).sort((a,b)=>(b.live||0)-(a.live||0)).slice(0,5).map((p,i)=>'<div><em>'+(i+1)+'. '+esc(p.name)+'</em><span>'+(p.live||0)+'</span></div>').join('');
+  el.innerHTML='<b>🏁 อันดับสด</b>'+Object.values(r.players||{}).sort((a,b)=>liveOf(b,r)-liveOf(a,r)).slice(0,5).map((p,i)=>'<div><em>'+(i+1)+'. '+esc(p.name)+'</em><span>'+liveOf(p,r)+'</span></div>').join('');
 }
 function copyRoom(){
   const u=location.origin+location.pathname+'?room='+ROOM.code;

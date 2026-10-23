@@ -8,7 +8,7 @@ gameTick = function () {
     if (w !== state.wave) {
       const up = w > (state.wave || 0);
       state.wave = w; EVENT_FREQ_MULT = Math.pow(2, w / 4);
-      if (up && w > 0 && typeof waveBanner === 'function') waveBanner(w);
+      if (up && w > 0 && typeof waveBanner === 'function') { waveBanner(w); if (typeof onWave === 'function') onWave(w); }
     }
   }
   return _gameTick();
