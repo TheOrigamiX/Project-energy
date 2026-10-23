@@ -53,3 +53,29 @@ button:hover::before{opacity:1}
 #dock button.bat-charge{background:linear-gradient(135deg,#38b6ff,#6ee7a8)}#dock button.bat-discharge{background:linear-gradient(135deg,#ffd166,#ff7b54)}#dock button.bat-off{background:#39435f;color:#e6ecf7}
 .sheet-grip{position:sticky;top:0;width:56px;height:6px;padding:12px 0;margin:0 auto 6px;box-sizing:content-box;background:rgba(255,255,255,.3);background-clip:content-box;border-radius:3px;touch-action:none;cursor:grab;z-index:2}
 #coachSpotlight{z-index:1700!important}#coachTooltip{z-index:1710!important}
+/* ===== v5: การ์ด / เป้าหมาย / โปรไฟล์ / คิว Tournament ===== */
+#cardTray{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:845;width:min(560px,calc(100% - 16px));padding:10px;border-radius:18px;background:rgba(10,14,26,.96);border:1px solid rgba(179,136,255,.5);box-shadow:0 0 30px rgba(179,136,255,.4);animation:fadeUp .4s}
+.ct-h{text-align:center;font-weight:800;margin-bottom:8px}.ct-row{display:flex;gap:8px}
+.ct-row button{flex:1;min-height:106px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:14px;border:2px solid rgba(179,136,255,.4);background:rgba(255,255,255,.07);color:#e6ecf7;cursor:pointer}
+.ct-row button span{font-size:1.8rem}.ct-row button b{font-size:.9rem}.ct-row button small{font-size:.74rem;color:#9fb3d1}
+#goalChip{font-size:.85rem;font-weight:800;padding:5px 14px;border-radius:12px;text-align:center;background:rgba(80,40,140,.55);color:#e6d6ff}
+#profileBar{cursor:pointer;margin:8px 0;padding:9px 14px;border-radius:14px;background:rgba(255,255,255,.08);font-size:.9rem;font-weight:700}
+#mapSel{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.mchip{padding:7px 12px;border-radius:14px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#e6ecf7;font-weight:700;cursor:pointer}.mchip.on{border-color:#ffd166;background:rgba(255,209,102,.2)}.mchip:disabled{opacity:.45}
+#queueBox,#profileModal{position:fixed;inset:0;z-index:1800;display:flex;align-items:center;justify-content:center;background:rgba(4,6,14,.8)}#queueBox.hidden,#profileModal.hidden{display:none}
+.qb,.pm{background:#121a30;border:1px solid rgba(120,160,255,.35);border-radius:22px;padding:22px;width:min(440px,calc(100% - 24px));max-height:86vh;overflow:auto;text-align:center;animation:fadeUp .4s}
+.qb-ico{font-size:3rem;animation:floaty 1.5s infinite}.pm h3{margin:14px 0 6px}.pm ul,.pm ol{padding-left:20px;text-align:left}.pm li{font-size:.88rem;margin:4px 0}
+/* ===== v6: auth / โปรไฟล์ / อวตาร ===== */
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid;overflow:hidden;flex:none;box-shadow:0 0 12px rgba(0,0,0,.4)}.av img{width:100%;height:100%;object-fit:cover}
+.tabs{display:flex;gap:6px;margin:12px 0}.tab{flex:1;padding:10px;border-radius:12px;border:none;background:rgba(255,255,255,.08);color:#9fb3d1;font-weight:800;cursor:pointer;transition:all .25s}.tab.on{background:linear-gradient(135deg,#ffd166,#ff7b54);color:#1a1208}
+.auth-card,.ps-card{max-width:520px;max-height:92vh;overflow:auto}.auth-card .room-input{margin-bottom:10px}
+.auth-msg{min-height:20px;color:#ff9d9d;font-size:.85rem;margin:4px 0}.auth-msg.ok{color:#6ee7a8}
+.link{background:none;border:none;color:#7bdff2;cursor:pointer;margin:6px 0;font-size:.85rem}
+.presets{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}.pbtn{border:2px solid transparent;border-radius:50%;padding:0;background:none;cursor:pointer}.pbtn.on{border-color:#ffd166}
+.ps-head{display:flex;gap:14px;align-items:center;text-align:left}.ps-head>div{flex:1}.xpbar{height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:4px}.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#38b6ff,#6ee7a8);transition:width .6s}
+.row{display:flex;gap:8px;margin:8px 0;align-items:center}.row .room-input{margin-bottom:0;flex:1}.upl{cursor:pointer;display:inline-block}
+.frow{display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,.06);border-radius:12px;margin-bottom:6px}.frow span{flex:1;text-align:left;font-size:.9rem}
+.spark{width:100%;height:60px;fill:#38b6ff}.ps-card h3{text-align:left;margin:14px 0 6px}.ps-card ul,.ps-card ol{text-align:left;padding-left:20px;font-size:.88rem}
+#profileBar{display:flex;align-items:center;gap:12px;text-align:left}#profileBar small{display:block;color:#9fb3d1;font-weight:600}
+#reactBar{position:fixed;right:10px;top:160px;z-index:900;display:flex;flex-direction:column;gap:6px}#reactBar button{width:46px;height:46px;border-radius:50%;border:none;background:rgba(14,20,38,.92);font-size:1.3rem;cursor:pointer}
+#inviteBox{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1900;display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:16px;background:#1b2542;border:1px solid #ffd166;animation:fadeUp .4s}
