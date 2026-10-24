@@ -5,4 +5,4 @@ const SUPABASE_CONFIG = {
 };
 
 /* Cloudflare Turnstile Site Key (เปิดเผยได้) ปล่อยว่าง = ปิด CAPTCHA ในเกม (ต้องปิดใน Supabase ด้วย) */
-const TURNSTILE_SITE_KEY = '';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFilumFIyO91Pvdv';
