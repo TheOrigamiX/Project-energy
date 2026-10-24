@@ -1,0 +1,41 @@
+/* ===== v7: ธีมพาสเทล + พื้นหลังหลายชั้น + เลย์เอาต์เต็มจอ ===== */
+:root{--ink:#f3eeff;--mute:#b9b3dc;--glass:rgba(38,38,78,.58);--line:rgba(255,255,255,.16);--lav:#cdb8ff}
+html{background:#1b1a3a;scroll-behavior:smooth}
+body{background:transparent!important;font-family:'Prompt','Kanit',system-ui,sans-serif;color:var(--ink)}
+button,input,select,textarea{font-family:inherit}
+::selection{background:rgba(205,184,255,.45)}::placeholder{color:#a9a3d1}
+*{scrollbar-width:thin;scrollbar-color:rgba(205,184,255,.4) transparent}
+/* --- พื้นหลัง --- */
+#bgLayer{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(160deg,#25234f,#2b2f63 45%,#223a52);transition:opacity .8s}
+body.ingame #bgLayer{opacity:.22}
+.aur{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:aur 26s ease-in-out infinite alternate;will-change:transform}
+.a1{width:55vw;height:55vw;left:-10vw;top:-15vw;background:radial-gradient(circle,#cdb8ff,transparent 65%)}
+.a2{width:50vw;height:50vw;right:-12vw;top:10vh;background:radial-gradient(circle,#9bd7ff,transparent 65%);animation-duration:32s;animation-delay:-8s}
+.a3{width:45vw;height:45vw;left:25vw;bottom:-18vw;background:radial-gradient(circle,#b5f0cf,transparent 65%);animation-duration:38s;animation-delay:-15s}
+@keyframes aur{0%{transform:translate(0,0) scale(1) rotate(0)}50%{transform:translate(6vw,4vh) scale(1.15) rotate(25deg);filter:blur(90px) hue-rotate(40deg)}100%{transform:translate(-5vw,8vh) scale(.95) rotate(-20deg);filter:blur(90px) hue-rotate(-30deg)}}
+#bgCity{position:absolute;left:-3%;bottom:0;width:106%;height:70%}
+#bgCv{position:absolute;inset:0;width:100%;height:100%}
+#bgFlash{position:absolute;inset:0;background:#efe8ff;opacity:0;transition:opacity .12s;pointer-events:none}
+/* --- เลย์เอาต์ / การ์ดกระจก --- */
+.screen:not(#gameScreen){background:transparent!important;min-height:100dvh;padding:clamp(12px,3vw,32px)}
+.start-card,.end-card,.auth-card,.ps-card,.room-card,.qb,.pm{background:var(--glass)!important;backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid var(--line)!important;border-radius:30px!important;box-shadow:0 24px 70px rgba(12,10,40,.5),inset 0 1px 0 rgba(255,255,255,.18)!important;color:var(--ink)}
+.start-card,.end-card{width:min(1040px,96vw)!important;max-width:none!important;padding:clamp(18px,3vw,40px)!important}
+.auth-card{width:min(480px,94vw)!important;max-width:none!important}
+.ps-card{width:min(920px,96vw)!important;max-width:none!important;max-height:94dvh!important}
+.room-card{width:min(760px,96vw)!important;max-width:none!important}
+.start-actions{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}.start-actions>button{width:100%;margin:0!important}
+.room-players{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px}.room-players li{margin:0!important}
+#cityPanel{max-width:min(1000px,96vw)}
+.start-card h1,.auth-card h1{font-size:clamp(2.2rem,5vw,3.6rem);letter-spacing:.02em;text-shadow:0 0 40px rgba(205,184,255,.55)}
+.screen:not(.hidden) .start-card>*:not(h1),.screen:not(.hidden) .auth-card>*:not(h1),.screen:not(.hidden) .ps-card>*,.screen:not(.hidden) .room-card>*:not(h1){animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) backwards}
+.start-card>:nth-child(2),.auth-card>:nth-child(2),.ps-card>:nth-child(2),.room-card>:nth-child(2){animation-delay:.08s!important}
+.start-card>:nth-child(3),.auth-card>:nth-child(3),.ps-card>:nth-child(3),.room-card>:nth-child(3){animation-delay:.16s!important}
+.start-card>:nth-child(4),.auth-card>:nth-child(4),.ps-card>:nth-child(4),.room-card>:nth-child(4){animation-delay:.24s!important}
+.start-card>:nth-child(n+5),.auth-card>:nth-child(n+5),.ps-card>:nth-child(n+5),.room-card>:nth-child(n+5){animation-delay:.32s!important}
+/* --- ปุ่ม / ช่องกรอก --- */
+.primary-btn{background:linear-gradient(120deg,#ffe3a3,#ffb4a2,#cdb8ff,#9bd7ff)!important;background-size:260% 260%!important;animation:grad 7s ease infinite;color:#2b2350!important;font-weight:800;border-radius:16px!important;box-shadow:0 10px 28px rgba(255,180,162,.32)}
+.secondary-btn{background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.24)!important;color:var(--ink)!important;border-radius:16px!important}
+.primary-btn:hover,.secondary-btn:hover{transform:translateY(-2px)}
+@keyframes grad{50%{background-position:100% 50%}}
+.room-input,.auth-card input,.ps-card input{background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.22)!important;border-radius:14px!important;color:var(--ink)!important;padding:12px 14px!important;transition:box-shadow .25s,border-color .25s}
+.room-input:focus,.auth-card input:focus,.ps-card input:focus{outline:none;border-color:var(--lav)!important;box-shadow:0 0 0 4px rgba(205,184,255,.28)}
