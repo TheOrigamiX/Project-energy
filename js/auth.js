@@ -4,7 +4,7 @@ const PRESETS = ['⚡', '🔋', '☀️', '💨', '💧', '🔥', '☢️', '�
 const TITLES = [[22, 'ตำนานกริด'], [14, 'ผู้อำนวยการโรงไฟฟ้า'], [8, 'วิศวกรไฟฟ้า'], [4, 'ผู้คุมสวิตช์'], [1, 'ช่างไฟฝึกหัด']];
 const frameOf = t => ['#cd7f32', '#c0c8d8', '#ffd166', '#7bdff2'][t >= 600 ? 3 : t >= 300 ? 2 : t >= 100 ? 1 : 0];
 const titleOf = x => TITLES.find(t => lvOf(x) >= t[0])[1];
-const thErr = m => ({ 'Invalid login credentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'Email not confirmed': 'ยังไม่ได้ยืนยันอีเมล', 'User already registered': 'อีเมลนี้สมัครไปแล้ว' })[m] || m;
+const thErr = m => ({ 'captcha verification process failed': 'ยืนยันตัวตน (CAPTCHA) ไม่ผ่าน ลองใหม่อีกครั้ง', 'Invalid login credentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'Email not confirmed': 'ยังไม่ได้ยืนยันอีเมล', 'User already registered': 'อีเมลนี้สมัครไปแล้ว' })[m] || m;
 const liveOf = (p, r) => p.bot ? Math.round(r.duration * 14 * p.skill * Math.pow(Math.min((state && state.elapsed) || 0, r.duration) / r.duration, 1.05)) : (p.live || 0);
 function avatarEl(av, size, tr) {
   const e = document.createElement('span'); e.className = 'av';
@@ -21,6 +21,7 @@ document.body.insertAdjacentHTML('beforeend', `
   <input id="aEmail" class="room-input" type="email" placeholder="อีเมล">
   <input id="aPass" class="room-input" type="password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)">
   <input id="aPass2" class="room-input hidden" type="password" placeholder="ยืนยันรหัสผ่าน">
+  <div id="aCaptcha" class="cap"></div>
   <div id="aMsg" class="auth-msg"></div>
   <button id="aGo" class="primary-btn">เข้าสู่ระบบ</button>
   <button id="aForgot" class="link">ลืมรหัสผ่าน?</button>
@@ -34,7 +35,16 @@ document.body.insertAdjacentHTML('beforeend', `
   <div id="psBody"></div><button class="secondary-btn" style="margin-top:12px" onclick="closeProfileScreen()">⬅ กลับ</button>
 </div></div>
 <div id="reactBar" class="hidden"></div>`);
-let regMode = false;
+let regMode = false, capToken = '', capId = null;
+const capOn = () => !!TURNSTILE_SITE_KEY;
+function capOk() { if (!capOn() || capToken) return true; authMsg('รอสักครู่ กำลังยืนยันตัวตน (CAPTCHA)...'); return false; }
+function capReset() { capToken = ''; if (capOn() && window.turnstile && capId !== null) try { turnstile.reset(capId); } catch (e) {} }
+if (capOn()) {
+  let n = 0; const iv = setInterval(() => {
+    if (window.turnstile) { clearInterval(iv); capId = turnstile.render('#aCaptcha', { sitekey: TURNSTILE_SITE_KEY, theme: 'dark', callback: t => { capToken = t; authMsg(''); }, 'expired-callback': () => { capToken = ''; }, 'error-callback': () => { capToken = ''; authMsg('โหลด CAPTCHA ไม่สำเร็จ ลองรีเฟรชหน้า'); } }); }
+    else if (++n > 50) { clearInterval(iv); authMsg('โหลด CAPTCHA ไม่ได้ ตรวจอินเทอร์เน็ต/โดเมนที่ตั้งใน Cloudflare'); }
+  }, 200);
+}
 const authMsg = (t, ok) => { const m = byId('aMsg'); m.textContent = t; m.className = 'auth-msg' + (ok ? ' ok' : ''); };
 function setTab(reg) {
   regMode = reg; byId('tabLogin').classList.toggle('on', !reg); byId('tabReg').classList.toggle('on', reg);
@@ -46,22 +56,22 @@ async function authGo() {
   const email = byId('aEmail').value.trim(), pass = byId('aPass').value;
   if (!/^\S+@\S+\.\S+$/.test(email)) return authMsg('อีเมลไม่ถูกต้อง');
   if (pass.length < 8) return authMsg('รหัสผ่านต้องมีอย่างน้อย 8 ตัว');
-  byId('aGo').disabled = true;
+  if (!capOk()) return; byId('aGo').disabled = true;
   try {
     if (regMode) {
       const name = byId('aName').value.trim();
       if (name.length < 3) throw new Error('ชื่อในเกมต้องมี 3-16 ตัว'); if (pass !== byId('aPass2').value) throw new Error('รหัสผ่านไม่ตรงกัน');
-      const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { display_name: name }, emailRedirectTo: homeUrl() } });
+      const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { display_name: name }, emailRedirectTo: homeUrl(), captchaToken: capToken } });
       if (error) throw error; if (!data.session) authMsg('สมัครแล้ว! ตรวจอีเมลเพื่อกดยืนยัน แล้วกลับมาเข้าสู่ระบบ', true);
-    } else { const { error } = await SB.auth.signInWithPassword({ email, password: pass }); if (error) throw error; }
+    } else { const { error } = await SB.auth.signInWithPassword({ email, password: pass, options: { captchaToken: capToken } }); if (error) throw error; }
   } catch (e) { authMsg(thErr(e.message)); }
-  byId('aGo').disabled = false;
+  capReset(); byId('aGo').disabled = false;
 }
 byId('tabLogin').onclick = () => setTab(false); byId('tabReg').onclick = () => setTab(true); byId('aGo').onclick = authGo;
 byId('authScreen').addEventListener('keydown', e => { if (e.key === 'Enter') authGo(); });
 byId('aGoogle').onclick = async () => { const { error } = await SB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: homeUrl() } }); if (error) authMsg(error.message); };
-byId('aGuest').onclick = async () => { const { error } = await SB.auth.signInAnonymously(); if (error) authMsg(error.message); };
-byId('aForgot').onclick = async () => { const email = byId('aEmail').value.trim(); if (!email) return authMsg('ใส่อีเมลก่อน'); const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: homeUrl() }); authMsg(error ? error.message : 'ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว', !error); };
+byId('aGuest').onclick = async () => { if (!capOk()) return; const { error } = await SB.auth.signInAnonymously({ options: { captchaToken: capToken } }); capReset(); if (error) authMsg(thErr(error.message)); };
+byId('aForgot').onclick = async () => { const email = byId('aEmail').value.trim(); if (!email) return authMsg('ใส่อีเมลก่อน'); if (!capOk()) return; const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: homeUrl(), captchaToken: capToken }); capReset(); authMsg(error ? error.message : 'ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว', !error); };
 async function loadMe() {
   const { data, error } = await SB.rpc('my_profile'); if (error) throw error;
   AUTH.p = data; AUTH.name = data.display_name; AUTH.avatar = data.avatar;
