@@ -205,8 +205,8 @@ function renderPlantsPanel() {
       '</div>' +
       '<div class="battery-bar-track"><div class="battery-bar-fill" style="width:' + Math.round((b.current / eff.capacity) * 100) + '%"></div></div>' +
       '<div class="battery-controls">' +
-      '<div class="battery-toggle-row"><span>ชาร์จไฟ</span><div class="switch ' + (b.mode === 'charge' ? 'on' : '') + '" style="--accent:#6ee7a8" onclick="setBatteryMode(\'charge\')"><div class="knob"></div></div></div>' +
-      '<div class="battery-toggle-row"><span>ปล่อยไฟ</span><div class="switch ' + (b.mode === 'discharge' ? 'on' : '') + '" style="--accent:#ffd166" onclick="setBatteryMode(\'discharge\')"><div class="knob"></div></div></div>' +
+      '<div class="battery-toggle-row"><span>ชาร์จไฟ</span><div class="switch ' + (b.mode === 'charge' ? 'on' : '') + '" style="--accent:#b5f0cf" onclick="setBatteryMode(\'charge\')"><div class="knob"></div></div></div>' +
+      '<div class="battery-toggle-row"><span>ปล่อยไฟ</span><div class="switch ' + (b.mode === 'discharge' ? 'on' : '') + '" style="--accent:#ffe3a3" onclick="setBatteryMode(\'discharge\')"><div class="knob"></div></div></div>' +
       '</div></div>';
   } else {
     const afford = state.money >= BATTERY_DEF.cost;
@@ -234,14 +234,14 @@ function renderCityUpgrade() {
   const gauge = document.getElementById('powerGauge');
   const ringPct = Math.max(0, Math.min(100, effPct));
   gauge.style.setProperty('--gauge-pct', ringPct);
-  gauge.style.setProperty('--gauge-color', effPct >= 100 ? '#6ee7a8' : (effPct >= 70 ? '#ffd166' : '#ff6b6b'));
+  gauge.style.setProperty('--gauge-color', effPct >= 100 ? '#b5f0cf' : (effPct >= 70 ? '#ffe3a3' : '#ffa8b5'));
   countUp('gaugePctNum', Math.min(999, effPct));
   countUp('gaugeSupplyNum', state.netSupply);
   countUp('gaugeDemandNum', state.demand);
 
   const trendEl = document.getElementById('demandTrend');
   trendEl.textContent = state.demand > state.prevDemand ? '▲' : (state.demand < state.prevDemand ? '▼' : '');
-  trendEl.style.color = state.demand > state.prevDemand ? '#ff9d9d' : (state.demand < state.prevDemand ? '#6ee7a8' : '#9fb3d1');
+  trendEl.style.color = state.demand > state.prevDemand ? '#ff9d9d' : (state.demand < state.prevDemand ? '#b5f0cf' : '#9fb3d1');
 
   const diff = state.netSupply - state.demand;
   countUp('gaugeDiffNum', diff, true);
@@ -299,20 +299,20 @@ function renderGame() {
     const ring = document.getElementById('clockRing');
     ring.classList.remove('infinite');
     ring.style.setProperty('--clock-pct', Math.max(0, (state.prepTime / PREP_TIME) * 100));
-    ring.style.setProperty('--clock-color', '#38b6ff');
+    ring.style.setProperty('--clock-color', '#9bd7ff');
   } else if (state.infinite) {
     document.getElementById('timerText').textContent = formatTime(state.elapsed);
     const ring = document.getElementById('clockRing');
     ring.classList.add('infinite');
     ring.style.setProperty('--clock-pct', 100);
-    ring.style.setProperty('--clock-color', '#6ee7a8');
+    ring.style.setProperty('--clock-color', '#b5f0cf');
   } else {
     document.getElementById('timerText').textContent = formatTime(Math.max(0, state.timeLeft));
     const ring = document.getElementById('clockRing');
     ring.classList.remove('infinite');
     const pct = Math.max(0, (state.timeLeft / TOTAL_TIME) * 100);
     ring.style.setProperty('--clock-pct', pct);
-    ring.style.setProperty('--clock-color', pct < 15 ? '#ff6b6b' : (pct < 40 ? '#ffd166' : '#ffb347'));
+    ring.style.setProperty('--clock-color', pct < 15 ? '#ffa8b5' : (pct < 40 ? '#ffe3a3' : '#ffb347'));
   }
   countUp('moneyVal', state.money);
   countUp('moneyValPanel', state.money);

@@ -28,7 +28,7 @@ function showCards(offer) {
   const row = t.querySelector('.ct-row');
   offer.forEach(p => {
     const b = document.createElement('button'); b.innerHTML = '<span>' + p.ic + '</span><b>' + p.n + '</b><small>' + p.d + '</small>';
-    b.onclick = () => { if (p.cash) state.money += p.cash; else (state.perks = state.perks || []).push(p); fxBurst(FX.pt.x, FX.pt.y, 40, ['#ffd166', '#b388ff', '#fff']); hideCards(); showToast(p.ic + ' ได้รับ: ' + p.n); };
+    b.onclick = () => { if (p.cash) state.money += p.cash; else (state.perks = state.perks || []).push(p); fxBurst(FX.pt.x, FX.pt.y, 40, ['#ffe3a3', '#cdb8ff', '#fff']); hideCards(); showToast(p.ic + ' ได้รับ: ' + p.n); };
     row.appendChild(b);
   });
   t.classList.remove('hidden'); let s = 15; clearInterval(CT);

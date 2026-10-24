@@ -2,7 +2,7 @@
 const AUTH = { user: null, p: null, name: '', avatar: 'p:0', cfg: null, ich: null };
 const PRESETS = ['⚡', '🔋', '☀️', '💨', '💧', '🔥', '☢️', '🌱', '🏭', '🛰️', '🧑‍🔧', '🦾'];
 const TITLES = [[22, 'ตำนานกริด'], [14, 'ผู้อำนวยการโรงไฟฟ้า'], [8, 'วิศวกรไฟฟ้า'], [4, 'ผู้คุมสวิตช์'], [1, 'ช่างไฟฝึกหัด']];
-const frameOf = t => ['#cd7f32', '#c0c8d8', '#ffd166', '#7bdff2'][t >= 600 ? 3 : t >= 300 ? 2 : t >= 100 ? 1 : 0];
+const frameOf = t => ['#cd7f32', '#c0c8d8', '#ffe3a3', '#b8ecf7'][t >= 600 ? 3 : t >= 300 ? 2 : t >= 100 ? 1 : 0];
 const titleOf = x => TITLES.find(t => lvOf(x) >= t[0])[1];
 const thErr = m => ({ 'captcha verification process failed': 'ยืนยันตัวตน (CAPTCHA) ไม่ผ่าน ลองใหม่อีกครั้ง', 'Invalid login credentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'Email not confirmed': 'ยังไม่ได้ยืนยันอีเมล', 'User already registered': 'อีเมลนี้สมัครไปแล้ว' })[m] || m;
 const liveOf = (p, r) => p.bot ? Math.round(r.duration * 14 * p.skill * Math.pow(Math.min((state && state.elapsed) || 0, r.duration) / r.duration, 1.05)) : (p.live || 0);

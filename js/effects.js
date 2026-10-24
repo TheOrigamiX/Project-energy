@@ -25,13 +25,13 @@ function fxBurst(x, y, n, cols) {
   fxAdd(o);
 }
 function fxConfetti() {
-  const cols = ['#ffd166', '#ff6b6b', '#38b6ff', '#6ee7a8', '#b388ff'], o = [];
+  const cols = ['#ffe3a3', '#ffa8b5', '#9bd7ff', '#b5f0cf', '#cdb8ff'], o = [];
   for (let i = 0; i < 140; i++) o.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * 200, vx: Math.random() * 4 - 2, vy: 1 + Math.random() * 3, g: .05, s: 4 + Math.random() * 4, c: cols[i % 5], life: 200 + Math.random() * 100, r: Math.random() * 6, spin: Math.random() * .3 - .15, rect: true });
   fxAdd(o);
 }
 function fxFloat(t, x, y, col) {
   const e = document.createElement('div'); e.className = 'fx-float'; e.textContent = t;
-  e.style.cssText = 'left:' + x + 'px;top:' + y + 'px;color:' + (col || '#ffd166'); document.body.appendChild(e); setTimeout(() => e.remove(), 1300);
+  e.style.cssText = 'left:' + x + 'px;top:' + y + 'px;color:' + (col || '#ffe3a3'); document.body.appendChild(e); setTimeout(() => e.remove(), 1300);
 }
 function fxShake() {
   document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
@@ -61,10 +61,10 @@ addEventListener('pointermove', e => {
 });
 document.addEventListener('pointerout', e => { const t = e.target.closest && e.target.closest('.start-card,.end-card,.room-card'); if (t && !t.contains(e.relatedTarget)) t.style.transform = ''; });
 const _spend = (fn, n, cols, conf) => wrap(fn, (o, a) => { const m = state.money; const r = o(...a); if (state.money < m) { fxBurst(FX.pt.x, FX.pt.y, n, cols); if (conf) fxConfetti(); } return r; });
-_spend('upgradePlant', 26, ['#6ee7a8', '#ffd166', '#fff']);
-_spend('buyPlant', 36, ['#ffd166', '#ff7b54', '#fff']);
-_spend('upgradeCity', 40, ['#ffd166', '#38b6ff', '#fff'], true);
-wrap('explodeNow', (o, a) => { fxShake(); fxBurst(innerWidth / 2, innerHeight / 2, 90, ['#ff6b6b', '#ff9f4a', '#ffd166']); return o(...a); });
+_spend('upgradePlant', 26, ['#b5f0cf', '#ffe3a3', '#fff']);
+_spend('buyPlant', 36, ['#ffe3a3', '#ffb4a2', '#fff']);
+_spend('upgradeCity', 40, ['#ffe3a3', '#9bd7ff', '#fff'], true);
+wrap('explodeNow', (o, a) => { fxShake(); fxBurst(innerWidth / 2, innerHeight / 2, 90, ['#ffa8b5', '#ffc98f', '#ffe3a3']); return o(...a); });
 wrap('sndHazard', (o, a) => { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); return o(...a); });
 wrap('sndBlackout', (o, a) => { if (navigator.vibrate) navigator.vibrate(400); return o(...a); });
 wrap('endGame', (o, a) => { const r = o(...a); hudHide(); if (!a[0]) setTimeout(fxConfetti, 300); return r; });

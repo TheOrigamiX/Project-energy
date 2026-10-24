@@ -30,15 +30,15 @@ const tips = {
 const randomTipKeys = ['kwmw', 'peak', 'renewable'];
 
 const PLANT_DEFS = [
-  { key: 'coal',       icon: '🏭', name: 'ถ่านหิน',                 type: 'constant', unlocked: true,  cost: 0,   capacity: 35, carbonRate: 6, runCost: 2, income: 5,  accent: '#ff6b6b' },
-  { key: 'gas',        icon: '🔥', name: 'ก๊าซธรรมชาติ',            type: 'constant', unlocked: false, cost: 150, capacity: 28, carbonRate: 3, runCost: 1, income: 4,  accent: '#ff9f4a' },
-  { key: 'solar',      icon: '☀️', name: 'โซลาร์เซลล์',             type: 'solar',    unlocked: true,  cost: 0,   dayCapacity: 26, carbonRate: 0, runCost: 0, income: 3,  accent: '#ffd166' },
-  { key: 'wind',       icon: '💨', name: 'กังหันลม',                 type: 'wind',     unlocked: false, cost: 100, carbonRate: 0, runCost: 0, income: 3,  accent: '#38b6ff' },
+  { key: 'coal',       icon: '🏭', name: 'ถ่านหิน',                 type: 'constant', unlocked: true,  cost: 0,   capacity: 35, carbonRate: 6, runCost: 2, income: 5,  accent: '#ffa8b5' },
+  { key: 'gas',        icon: '🔥', name: 'ก๊าซธรรมชาติ',            type: 'constant', unlocked: false, cost: 150, capacity: 28, carbonRate: 3, runCost: 1, income: 4,  accent: '#ffc98f' },
+  { key: 'solar',      icon: '☀️', name: 'โซลาร์เซลล์',             type: 'solar',    unlocked: true,  cost: 0,   dayCapacity: 26, carbonRate: 0, runCost: 0, income: 3,  accent: '#ffe3a3' },
+  { key: 'wind',       icon: '💨', name: 'กังหันลม',                 type: 'wind',     unlocked: false, cost: 100, carbonRate: 0, runCost: 0, income: 3,  accent: '#9bd7ff' },
   { key: 'hydro',      icon: '🌊', name: 'พลังน้ำ',                   type: 'constant', unlocked: false, cost: 220, capacity: 22, carbonRate: 0, runCost: 0, income: 4,  accent: '#4ad0ff' },
   { key: 'geothermal', icon: '🌋', name: 'ความร้อนใต้พิภพ',          type: 'constant', unlocked: false, cost: 260, capacity: 20, carbonRate: 0, runCost: 0, income: 4,  accent: '#ff8c42' },
   { key: 'biomass',    icon: '🌾', name: 'ชีวมวล',                   type: 'constant', unlocked: false, cost: 130, capacity: 22, carbonRate: 2, runCost: 1, income: 3,  accent: '#8bc34a' },
   { key: 'tidal',      icon: '🌀', name: 'คลื่น/น้ำขึ้นน้ำลง',       type: 'constant', unlocked: false, cost: 280, capacity: 18, carbonRate: 0, runCost: 0, income: 4,  accent: '#26c6da' },
-  { key: 'nuclear',    icon: '☢️', name: 'นิวเคลียร์',                type: 'constant', unlocked: false, cost: 500, capacity: 50, carbonRate: 0, runCost: 2, income: 8,  accent: '#b388ff' },
+  { key: 'nuclear',    icon: '☢️', name: 'นิวเคลียร์',                type: 'constant', unlocked: false, cost: 500, capacity: 50, carbonRate: 0, runCost: 2, income: 8,  accent: '#cdb8ff' },
   { key: 'hydrogen',   icon: '💠', name: 'เซลล์เชื้อเพลิงไฮโดรเจน', type: 'constant', unlocked: false, cost: 350, capacity: 24, carbonRate: 0, runCost: 1, income: 5,  accent: '#64b5f6' },
   { key: 'fusion',     icon: '⚛️', name: 'ฟิวชัน (อนาคต)',          type: 'constant', unlocked: false, cost: 600, capacity: 60, carbonRate: 0, runCost: 0, income: 10, accent: '#ff4fd8' }
 ];

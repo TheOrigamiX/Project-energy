@@ -207,14 +207,14 @@ function closeInfo() { document.getElementById('detailOverlay').classList.add('h
 function getEventDetailHTML(id) {
   if (id === 'hazard' && state.activeHazard) {
     const h = state.activeHazard, def = h.def, pd = PLANT_MAP[h.key];
-    return '<div class="detail-icon" style="color:#ff6b6b;">' + def.icon + ' → 💥</div><h2 style="color:#ff6b6b;">' + def.name + '!</h2>' +
+    return '<div class="detail-icon" style="color:#ffa8b5;">' + def.icon + ' → 💥</div><h2 style="color:#ffa8b5;">' + def.name + '!</h2>' +
       '<p class="detail-tip">' + def.warn + ' ' + def.resolve + '</p>' +
       '<div class="detail-stats"><div><span>โรงไฟฟ้า</span><span>' + pd.name + '</span></div><div><span>เหลือเวลา</span><span>' + h.timeLeft + ' วิ</span></div></div>' +
       '<button class="emergency-btn" onclick="emergencyShutdown(\'' + h.key + '\')">ปิดโรงไฟฟ้านี้ทันที</button>';
   }
   if (id === 'buff' && state.activeBuff) {
     const d = state.activeBuff.def;
-    return '<div class="detail-icon">' + d.icon + '</div><h2 style="color:#6ee7a8;">' + d.name + '</h2><p class="detail-tip">' + d.desc + '</p>' +
+    return '<div class="detail-icon">' + d.icon + '</div><h2 style="color:#b5f0cf;">' + d.name + '</h2><p class="detail-tip">' + d.desc + '</p>' +
       '<div class="detail-stats"><div><span>เหลือเวลา</span><span>' + state.activeBuff.timeLeft + ' วิ</span></div></div>';
   }
   if (id === 'peak') {
