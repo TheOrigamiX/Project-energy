@@ -41,7 +41,7 @@ window.renderLeaderboard = async function () {
 };
 (function () {
   const dt = byId('lbDurationTabs'); if (!dt) return; const t = document.createElement('div'); t.id = 'lbModeTabs'; t.className = dt.className;
-  [['solo', '🎮 เล่นเดี่ยว'], ['tour', '🏆 Tournament'], ['daily', '📅 Daily']].forEach(([m, l]) => { const b = document.createElement('button'); b.className = 'dur-btn'; b.dataset.mode = m; b.textContent = l; b.onclick = () => selectLbMode(m); t.appendChild(b); }); dt.before(t);
+  [['solo', '🎮 เล่นเดี่ยว'], ['tour', '🏆 Tournament'], ['daily', '📅 Daily']].forEach(([m, l]) => { const b = document.createElement('button'); b.className = 'dur-btn'; b.dataset.mode = m; b.textContent = l; b.onclick = () => selectLbMode(m); t.appendChild(b); }); dt.before(t); t.insertAdjacentHTML('afterend', '<div class="lbnote">แสดงเฉพาะคะแนนที่ดีที่สุดของผู้เล่นแต่ละคน (1 คน ต่อ 1 อันดับ ในแต่ละโหมด)</div>');
 })();
 function syncMode() { document.querySelectorAll('#lbModeTabs .dur-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === LB.mode)); ['lbDurationTabs', 'lbPeriodTabs'].forEach(i => { const e = byId(i); if (e) e.classList.toggle('hidden', LB.mode !== 'solo'); }); }
 function selectLbMode(m) { LB.mode = m; syncMode(); renderLeaderboardView(); updateLbCountdownText(); }

@@ -57,7 +57,7 @@ function hudRender() {
   const fc = byId('forecastChip'), pk = state.peakActive ? '⚡ Peak เหลือ ' + state.peakTimer + ' วิ' : '⏱ Peak อีก ' + state.nextPeakIn + ' วิ';
   fc.textContent = pk + '  •  🌦 อากาศเปลี่ยนอีก ' + state.nextWeatherIn + ' วิ  •  🌊 Wave ' + (state.wave || 0) + '  •  ' + curMap().n + (state.boss ? '  •  ' + BOSS[state.boss.t].n + ' ' + state.boss.left + ' วิ' : '');
   fc.classList.toggle('hot', !!state.peakActive || state.nextPeakIn <= 5);
-  hudStrip(); fxFlow(); hudUnlock();
+  hudStrip(); fxFlow(); hudUnlock(); hudPrep();
   if (!ROOM.code && (state.elapsed | 0) % 3 === 0) saveSnap();
 }
 wrap('renderGame', (o, a) => { o(...a); if (state) hudRender(); });
@@ -73,7 +73,7 @@ wrap('showToast', (o, a) => {
   setTimeout(() => { e.classList.add('out'); setTimeout(() => e.remove(), 400); }, 5000);
 });
 function hudHide() {
-  closeSheets(); byId('bellBtn').classList.add('hidden'); byId('notifLog').classList.add('hidden'); byId('dock').classList.add('hidden'); byId('sosBtn').classList.add('hidden'); byId('liveRank').classList.add('hidden');
+  closeSheets(); byId('bellBtn').classList.add('hidden'); byId('notifLog').classList.add('hidden'); const pbn = byId('prepBanner'); if (pbn) pbn.classList.add('hidden'); byId('dock').classList.add('hidden'); byId('sosBtn').classList.add('hidden'); byId('liveRank').classList.add('hidden');
   const f = byId('flowSvg'); if (f) f.innerHTML = '';
   document.querySelectorAll('.fx-float,.wave-banner').forEach(e => e.remove());
   const al = byId('alertBar'); if (al) al.innerHTML = '';
@@ -103,3 +103,11 @@ const NOTIFS = [], notifKind = m => /🚨|⚠|💥|🔥|ระเบิด|ไ�
   const b = document.createElement('button'), l = document.createElement('div'); b.id = 'bellBtn'; b.textContent = '🔔'; b.className = 'hidden'; l.id = 'notifLog'; l.className = 'hidden'; document.body.append(b, l);
   b.onclick = () => { l.classList.toggle('hidden'); l.innerHTML = ''; NOTIFS.forEach(n => { const d = document.createElement('div'); d.className = 'alert-item ' + n.k; d.textContent = new Date(n.t).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '  ' + n.m; l.appendChild(d); }); if (!NOTIFS.length) l.textContent = 'ยังไม่มีการแจ้งเตือน'; };
 })();
+
+function hudPrep() {
+  let b = byId('prepBanner');
+  if (!b) { b = document.createElement('div'); b.id = 'prepBanner'; b.className = 'hidden'; b.innerHTML = '<div class="pb-t"></div><div class="pb-bar"><i></i></div><button class="secondary-btn" id="pbSkip">⏭ ข้ามช่วงเตรียมพร้อม</button>'; document.body.appendChild(b); byId('pbSkip').onclick = () => { const s = byId('skipPrepBtn'); if (s) s.click(); }; }
+  const on = !!(state.prepping && gameInProgress); b.classList.toggle('hidden', !on); if (!on) return;
+  b.querySelector('.pb-t').textContent = '🛠 กำลังเตรียมพร้อม — เกมจะเริ่มจริงในอีก ' + Math.max(0, state.prepTime) + ' วินาที';
+  b.querySelector('i').style.width = Math.max(0, state.prepTime / PREP_TIME * 100) + '%';
+}

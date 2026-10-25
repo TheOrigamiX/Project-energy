@@ -10,7 +10,7 @@ function openRoom(){
   byId('startScreen').classList.add('hidden');byId('roomScreen').classList.remove('hidden');
   byId('roomName').value=AUTH.name||'';byId('roomName').disabled=true;
 }
-function roomPlayerName(){const n=(byId('roomName').value.trim()||'ผู้เล่น').slice(0,16);localStorage.setItem('voltrushName',n);return n;}
+function roomPlayerName(){const n=(byId('roomName').value.trim()||'ผู้เล่น').slice(0,25);localStorage.setItem('voltrushName',n);return n;}
 async function createRoom(){
   const name=roomPlayerName();const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';
   for(let t=0;t<8;t++){code='';for(let i=0;i<4;i++)code+=ch[Math.floor(Math.random()*ch.length)];const x=await DB.ref('rooms/'+code).once('value');if(!x.exists())break;}

@@ -17,7 +17,7 @@ document.body.insertAdjacentHTML('beforeend', `
 <div id="authScreen" class="screen hidden"><div class="start-card auth-card">
   <h1>⚡ VoltRush</h1>
   <div class="tabs"><button class="tab on" id="tabLogin">เข้าสู่ระบบ</button><button class="tab" id="tabReg">สมัครสมาชิก</button></div>
-  <input id="aName" class="room-input hidden" placeholder="ชื่อในเกม (3-16 ตัว)" maxlength="16">
+  <input id="aName" class="room-input hidden" placeholder="ชื่อในเกม (3-25 ตัว)" maxlength="25">
   <input id="aEmail" class="room-input" type="email" placeholder="อีเมล">
   <input id="aPass" class="room-input" type="password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)">
   <input id="aPass2" class="room-input hidden" type="password" placeholder="ยืนยันรหัสผ่าน">
@@ -72,7 +72,7 @@ async function authGo() {
   try {
     if (regMode) {
       const name = byId('aName').value.trim();
-      if (name.length < 3) throw new Error('ชื่อในเกมต้องมี 3-16 ตัว'); if (pass !== byId('aPass2').value) throw new Error('รหัสผ่านไม่ตรงกัน');
+      if (name.length < 3) throw new Error('ชื่อในเกมต้องมี 3-25 ตัว'); if (pass !== byId('aPass2').value) throw new Error('รหัสผ่านไม่ตรงกัน');
       const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { display_name: name }, emailRedirectTo: homeUrl(), captchaToken: capToken } });
       if (error) throw error; if (!data.session) authMsg('สมัครแล้ว! ตรวจอีเมลเพื่อกดยืนยัน แล้วกลับมาเข้าสู่ระบบ', true);
     } else { const { error } = await SB.auth.signInWithPassword({ email, password: pass, options: { captchaToken: capToken } }); if (error) throw error; }
@@ -111,7 +111,7 @@ byId('psTabs').onclick = e => { const t = e.target.dataset.t; if (t) renderPS(t)
 const psMsg = (t, ok) => { const m = byId('psMsg'); if (m) { m.textContent = t; m.className = 'auth-msg' + (ok ? ' ok' : ''); } };
 async function renderPS(tab) {
   const p = AUTH.p, lv = lvOf(p.xp), lo = (lv - 1) * (lv - 1) * 80, hi = lv * lv * 80, hd = byId('psHead'); hd.innerHTML = '';
-  hd.appendChild(avatarEl(AUTH.avatar, 72, p.trophies));
+  const aw = document.createElement('div'); aw.className = 'avwrap'; aw.appendChild(avatarEl(AUTH.avatar, 72, p.trophies)); aw.insertAdjacentHTML('beforeend', '<i class="pen">✏️</i><small>แตะเพื่อเปลี่ยนรูป</small>'); aw.onclick = () => renderPS('me'); hd.appendChild(aw);
   const t = document.createElement('div'); t.innerHTML = '<b></b><div></div><div class="xpbar"><i></i></div>';
   t.children[0].textContent = AUTH.name; t.children[1].textContent = titleOf(p.xp) + ' • Lv.' + lv + ' • 🏆 ' + p.trophies + ' ' + leagueOf(p.trophies);
   t.querySelector('i').style.width = Math.min(100, (p.xp - lo) / (hi - lo) * 100) + '%'; hd.appendChild(t);
@@ -119,7 +119,7 @@ async function renderPS(tab) {
   const b = byId('psBody'); b.innerHTML = ''; if (tab === 'me') psMe(b); else if (tab === 'stats') await psStats(b); else await psFriends(b);
 }
 function psMe(b) {
-  b.innerHTML = '<h3>ชื่อในเกม</h3><div class="row"><input id="psName" class="room-input" maxlength="16"><button class="secondary-btn" id="psSave">บันทึก</button></div><h3>รูปประจำตัว</h3><div id="psPresets" class="presets"></div><div class="row"><label class="secondary-btn upl">📷 อัปโหลดรูปของคุณ<input type="file" id="psFile" accept="image/*" hidden></label></div><div id="psMsg" class="auth-msg"></div><div id="psGuest"></div><button class="secondary-btn" id="psOut">🚪 ออกจากระบบ</button>';
+  b.innerHTML = '<h3>ชื่อในเกม</h3><div class="row"><input id="psName" class="room-input" maxlength="25"><button class="secondary-btn" id="psSave">บันทึก</button></div><h3>รูปประจำตัว <small class="hintline">— เลือกรูปสำเร็จรูป หรืออัปโหลดรูปของคุณเองได้</small></h3><div id="psPresets" class="presets"></div><div class="row"><label class="secondary-btn upl">📷 อัปโหลดรูปของคุณ<input type="file" id="psFile" accept="image/*" hidden></label></div><div id="psMsg" class="auth-msg"></div><div id="psGuest"></div><button class="secondary-btn" id="psOut">🚪 ออกจากระบบ</button>';
   byId('psName').value = AUTH.name;
   PRESETS.forEach((_, i) => { const bt = document.createElement('button'); bt.className = 'pbtn' + (AUTH.avatar === 'p:' + i ? ' on' : ''); bt.appendChild(avatarEl('p:' + i, 44, AUTH.p.trophies)); bt.onclick = () => saveProfile(null, 'p:' + i); byId('psPresets').appendChild(bt); });
   byId('psSave').onclick = () => saveProfile(byId('psName').value, AUTH.avatar);

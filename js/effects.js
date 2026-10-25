@@ -68,3 +68,22 @@ wrap('explodeNow', (o, a) => { fxShake(); fxBurst(innerWidth / 2, innerHeight / 
 wrap('sndHazard', (o, a) => { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); return o(...a); });
 wrap('sndBlackout', (o, a) => { if (navigator.vibrate) navigator.vibrate(400); return o(...a); });
 wrap('endGame', (o, a) => { const r = o(...a); hudHide(); if (!a[0]) setTimeout(fxConfetti, 300); return r; });
+
+/* ลูกเล่นเมาส์/การแตะ: แสงตามเมาส์ + ประกายตามรอย + คลื่นและประกายตอนกด */
+(function () {
+  const fine = matchMedia('(pointer:fine)').matches, calm = matchMedia('(prefers-reduced-motion: reduce)').matches, PC = ['#cdb8ff', '#b5f0cf', '#9bd7ff', '#ffe3a3', '#ffb4a2'];
+  let tx = -99, ty = -99, gx = -99, gy = -99, last = 0;
+  if (fine && !calm) {
+    const g = document.createElement('div'); g.id = 'cursorGlow'; document.body.appendChild(g);
+    (function loop() { gx += (tx - gx) * .18; gy += (ty - gy) * .18; g.style.transform = 'translate(' + (gx - 22) + 'px,' + (gy - 22) + 'px)'; requestAnimationFrame(loop); })();
+    addEventListener('pointermove', e => {
+      tx = e.clientX; ty = e.clientY; const n = performance.now(); if (n - last < 45) return; last = n;
+      fxAdd([{ x: tx, y: ty, vx: (Math.random() - .5) * .9, vy: (Math.random() - .5) * .9 + .2, g: .02, s: 1.2 + Math.random() * 1.6, c: PC[Math.floor(Math.random() * 5)], life: 22 + Math.random() * 16, r: 0, spin: 0 }]);
+    });
+    addEventListener('pointerover', e => g.classList.toggle('on', !!(e.target.closest && e.target.closest('button,.chip,.lbrow,.tab,.pbtn,.mchip,.switch,#profileBar,.avwrap'))));
+  }
+  addEventListener('pointerdown', e => {
+    if (calm) return; const r = document.createElement('i'); r.className = 'click-ring'; r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'; document.body.appendChild(r); setTimeout(() => r.remove(), 650);
+    fxBurst(e.clientX, e.clientY, 12, PC);
+  });
+})();

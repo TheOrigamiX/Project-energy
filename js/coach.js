@@ -30,6 +30,7 @@ function endCoachTutorial() {
   window.removeEventListener('scroll', repositionCoach, true);
   closeSheets();
   resumeGame();
+  if (state && state.prepping) showToast('🛠 จบการสอนแล้ว กำลังเตรียมพร้อม เกมจะเริ่มจริงในอีก ' + state.prepTime + ' วินาที');
 }
 function coachNext() { sndCoachStep(); if (coachIndex < COACH_STEPS.length - 1) { coachIndex++; showCoachStep(coachIndex); } else { endCoachTutorial(); } }
 function coachSkip() { endCoachTutorial(); }

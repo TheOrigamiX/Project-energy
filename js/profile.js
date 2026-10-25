@@ -41,7 +41,7 @@ wrap('endGame', (o, a) => { const r = o(...a); submitRun(); if (!ROOM.code) rng 
 function renderMenuBar() {
   const b = byId('profileBar'); if (!b || !AUTH.p) return; b.innerHTML = ''; const p = AUTH.p;
   b.appendChild(avatarEl(AUTH.avatar, 46, p.trophies)); const t = document.createElement('div'); t.innerHTML = '<b></b><small></small>';
-  t.children[0].textContent = AUTH.name; t.children[1].textContent = titleOf(p.xp) + ' • Lv.' + lvOf(p.xp) + ' • ⭐ ' + p.xp + ' XP • 🏆 ' + p.trophies + ' ' + leagueOf(p.trophies); b.appendChild(t);
+  t.children[0].textContent = AUTH.name; t.children[1].textContent = titleOf(p.xp) + ' • Lv.' + lvOf(p.xp) + ' • ⭐ ' + p.xp + ' XP • 🏆 ' + p.trophies + ' ' + leagueOf(p.trophies); b.appendChild(t); const hint = document.createElement('span'); hint.className = 'edit-hint'; hint.textContent = '✏️ แตะเพื่อแก้ไขโปรไฟล์ / เปลี่ยนรูป'; b.appendChild(hint);
   const ms = byId('mapSel'), lv = lvOf(p.xp); ms.innerHTML = '';
   MAPS.forEach((m, i) => { const c = document.createElement('button'); c.className = 'mchip' + (i === SEL_MAP ? ' on' : ''); c.textContent = lv >= m.lv ? m.n : '🔒 Lv.' + m.lv; c.disabled = lv < m.lv; c.onclick = () => { SEL_MAP = i; renderMenuBar(); }; ms.appendChild(c); });
 }
