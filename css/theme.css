@@ -39,3 +39,15 @@ body.ingame #bgLayer{opacity:.22}
 @keyframes grad{50%{background-position:100% 50%}}
 .room-input,.auth-card input,.ps-card input{background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.22)!important;border-radius:14px!important;color:var(--ink)!important;padding:12px 14px!important;transition:box-shadow .25s,border-color .25s}
 .room-input:focus,.auth-card input:focus,.ps-card input:focus{outline:none;border-color:var(--lav)!important;box-shadow:0 0 0 4px rgba(205,184,255,.28)}
+
+/* --- แก้ CAPTCHA บน Safari/iOS: ไม่ให้ iframe อยู่ใน backdrop-filter/แอนิเมชัน --- */
+.auth-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(38,38,78,.93)!important}
+.auth-card>*{animation:none!important}
+.cap{display:block!important;min-height:70px;text-align:center}
+/* --- ปุ่มปลดล็อก --- */
+.buy-btn.afford{background:linear-gradient(135deg,#b5f0cf,#ffe3a3)!important;color:#1f3a2c!important;font-weight:900;animation:affPulse 1.2s ease-in-out infinite;box-shadow:0 0 0 0 rgba(181,240,207,.7),0 0 22px rgba(181,240,207,.65)}
+@keyframes affPulse{50%{transform:scale(1.04);box-shadow:0 0 0 10px rgba(181,240,207,0),0 0 30px rgba(181,240,207,.95)}}
+.buy-btn:disabled{opacity:1!important;cursor:not-allowed;color:#e7e2ff;background:linear-gradient(90deg,rgba(255,227,163,.55) calc(var(--p,0)*100%),rgba(255,255,255,.1) calc(var(--p,0)*100%))!important}
+#dock #dock-plants{overflow:visible}#dock #dock-plants.has-aff{animation:affPulse 1.3s ease-in-out infinite}
+.bdg{position:absolute;top:-9px;right:-7px;min-width:24px;height:24px;border-radius:12px;background:#ff9fb5;color:#fff;font-size:.85rem;font-weight:900;font-style:normal;display:none;align-items:center;justify-content:center;box-shadow:0 0 14px #ff9fb5}.bdg.on{display:flex}
+#resumeBox{position:fixed;inset:0;z-index:1800;display:flex;align-items:center;justify-content:center;background:rgba(4,6,14,.8)}
