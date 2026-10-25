@@ -171,7 +171,7 @@ async function renderLeaderboardView() {
 }
 
 function restartGame() {
-  if (!scoreSavedThisRound && currentScore() > 0) {
+  if (false) {
     if (!confirm('คุณยังไม่ได้บันทึกคะแนนไว้ในตารางอันดับ ต้องการเล่นใหม่โดยไม่บันทึกคะแนนนี้ใช่หรือไม่?')) return;
   }
   document.getElementById('endScreen').classList.add('hidden');

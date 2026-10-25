@@ -66,7 +66,7 @@ function renderRoom(r){
   const host=r.host===PID,st=r.status,list=standings(r);
   byId('roomInfo').textContent='รอบ '+(r.round||0)+'/'+r.rounds+' • '+(r.duration/60)+' นาที/รอบ • '+({lobby:'รอเริ่ม',playing:'กำลังเล่น',between:'จบรอบ',finished:'จบทัวร์นาเมนต์'}[st]||'');
   const ol=byId('roomPlayers');ol.innerHTML='';
-  list.forEach((p,i)=>{const li=document.createElement('li');li.textContent=(['🥇','🥈','🥉'][i]||'#'+(i+1))+' '+p.name+(p.id===PID?' (คุณ)':'')+' — '+p.pts+' แต้ม'+(p.cur!==undefined?' • รอบนี้ '+p.cur:(st==='playing'?' • กำลังเล่น '+p.live:''));li.prepend(avatarEl(p.av,26,p.tr));ol.appendChild(li);});
+  list.forEach((p,i)=>{const li=document.createElement('li');li.textContent=(['🥇','🥈','🥉'][i]||'#'+(i+1))+' '+p.name+(p.id===PID?' (คุณ)':'')+' • '+leagueOf(p.tr||0)+' — '+p.pts+' แต้ม'+(p.cur!==undefined?' • รอบนี้ '+p.cur:(st==='playing'?' • กำลังเล่น '+p.live:''));li.prepend(avatarEl(p.av,26,p.tr));ol.appendChild(li);});
   const b=byId('roomStartBtn');b.classList.toggle('hidden',!host||st==='playing');
   b.textContent=st==='lobby'?'▶ เริ่มรอบที่ 1':st==='finished'?'🔁 เริ่มทัวร์นาเมนต์ใหม่':'▶ เริ่มรอบที่ '+((r.round||0)+1);
   byId('roomForceBtn').classList.toggle('hidden',!(host&&st==='playing'));

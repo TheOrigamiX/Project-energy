@@ -8,13 +8,13 @@ function queueBox(on) {
 async function pollQueue() {
   if (!MM.on || MM.busy) return; MM.busy = true;
   try {
-    const { data, error } = await SB.rpc('mm_poll'); byId('qbTxt').textContent = 'รอ ' + Math.round((Date.now() - MM.t0) / 1000) + ' วิ';
+    const { data, error } = await SB.rpc('mm_poll');
     if (error) { showToast(error.message); cancelQueue(); }
-    else if (data) { MM.on = false; clearInterval(MM.tick); queueBox(false); await joinRoom(data, AUTH.name); ['startScreen', 'profileScreen'].forEach(i => byId(i).classList.add('hidden')); byId('roomScreen').classList.remove('hidden'); }
+    else if (data) { MM.on = false; clearInterval(MM.tick); clearInterval(MM.clock); queueBox(false); await joinRoom(data, AUTH.name); ['startScreen', 'profileScreen'].forEach(i => byId(i).classList.add('hidden')); byId('roomScreen').classList.remove('hidden'); }
   } finally { MM.busy = false; }
 }
-function startTournament() { if (!AUTH.user) return; MM.on = true; MM.t0 = Date.now(); queueBox(true); clearInterval(MM.tick); pollQueue(); MM.tick = setInterval(pollQueue, 2000); }
-function cancelQueue() { MM.on = false; clearInterval(MM.tick); queueBox(false); SB.rpc('mm_cancel'); }
+function startTournament() { if (!AUTH.user) return; MM.on = true; MM.t0 = Date.now(); queueBox(true); clearInterval(MM.tick); clearInterval(MM.clock); const tk = () => { byId('qbTxt').textContent = 'รอ ' + Math.floor((Date.now() - MM.t0) / 1000) + ' วิ • ลีก ' + leagueOf(AUTH.p.trophies) + ' (🏆 ' + AUTH.p.trophies + ')'; }; tk(); MM.clock = setInterval(tk, 1000); pollQueue(); MM.tick = setInterval(pollQueue, 2000); }
+function cancelQueue() { MM.on = false; clearInterval(MM.tick); clearInterval(MM.clock); queueBox(false); SB.rpc('mm_cancel'); }
 wrap('onRoom', (o, a) => {
   o(...a); const r = ROOM.data; if (!r || !r.tournament) return;
   if (r.host === PID && r.status === 'lobby' && ROOM.auto !== ROOM.code && Object.keys(r.players || {}).length >= r.expect) { ROOM.auto = ROOM.code; setTimeout(hostStart, 2500); }

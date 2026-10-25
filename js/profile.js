@@ -16,17 +16,22 @@ async function submitRun() {
     const sc = Math.round(currentScore()), old = AUTH.p;
     const { data, error } = await SB.rpc('submit_run', { p_run: run.run, p_score: sc, p_wave: (state && state.wave) || 0, p_elapsed: (state && state.elapsed) | 0, p_streak: (state && state.maxStreak) || 0 });
     if (error) throw error; AUTH.p = data.profile;
-    showToast(data.score === 0 && sc > 0 ? '⚠️ คะแนนผิดปกติ ไม่ถูกบันทึก' : '+' + data.gained + ' XP');
+    showSaveStat(data, run, sc);
     if (lvOf(AUTH.p.xp) > lvOf(old.xp)) levelUp(lvOf(AUTH.p.xp)); renderMenuBar();
   } catch (e) {
-    if (/fetch|network|load failed/i.test(e.message || '')) { try { localStorage.setItem('voltrushPending', JSON.stringify({ run: run.run, score: Math.round(currentScore()), wave: (state && state.wave) || 0, elapsed: (state && state.elapsed) | 0, streak: (state && state.maxStreak) || 0 })); } catch (x) {} showToast('เน็ตหลุด จะส่งผลให้ใหม่เมื่อกลับมาออนไลน์'); }
+    if (/fetch|network|load failed/i.test(e.message || '')) { try { localStorage.setItem('voltrushPending', JSON.stringify({ run: run.run, score: Math.round(currentScore()), wave: (state && state.wave) || 0, elapsed: (state && state.elapsed) | 0, streak: (state && state.maxStreak) || 0 })); } catch (x) {} showToast('เน็ตหลุด จะส่งผลให้ใหม่เมื่อกลับมาออนไลน์'); const el = byId('saveStat'); if (el) { el.className = 'save-stat bad'; el.textContent = '⚠️ ยังไม่ได้บันทึก (เน็ตหลุด) จะส่งให้อัตโนมัติเมื่อกลับมาออนไลน์'; } }
     else showToast('บันทึกผลไม่สำเร็จ: ' + e.message);
   }
 }
 async function startDaily() {
-  const r = await beginRun('daily', 180); if (!r) return false;
-  let h = 0; for (const c of r.day) h = (h * 31 + c.charCodeAt(0)) | 0;
-  DAILY = true; DAILY_SEED = h >>> 0; rng = mulberry32(h >>> 0); CUR_MAP = (h >>> 0) % MAPS.length; selectedDuration = 180; startGame(); return true;
+  const { data: st, error } = await SB.rpc('daily_status'); if (error) { showToast(error.message); return false; }
+  if (st.state === 'done') { showToast('วันนี้เล่น Daily แล้ว ได้ ' + st.score + ' คะแนน'); return false; }
+  let run = { run: st.run, day: st.day };
+  if (st.state === 'new') { run = await beginRun('daily', 180); if (!run) return false; } else RUN = run;
+  let h = 0; for (const c of run.day) h = (h * 31 + c.charCodeAt(0)) | 0; DAILY_SEED = h >>> 0; selectedDuration = 180;
+  if (st.state === 'active' && st.snapshot && st.snapshot.state) RESUME = Object.assign({}, st.snapshot, { run, daily: true, seed: DAILY_SEED, sel: 180 });
+  else { DAILY = true; rng = mulberry32(DAILY_SEED); CUR_MAP = DAILY_SEED % MAPS.length; }
+  startGame(); return true;
 }
 wrap('startGame', (o, a) => {
   if (!DAILY && !RESUME) { if (!ROOM.code) { rng = Math.random; CUR_MAP = SEL_MAP; } beginRun(ROOM.code ? (ROOM.data && ROOM.data.tournament ? 'tour' : 'room') : 'solo', Number(selectedDuration) || 0); }

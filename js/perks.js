@@ -5,8 +5,8 @@ const MAPS = [
   { n: '🌊 ชายฝั่ง', lv: 5, inc: { wind: 1.5, gas: .85 }, dem: 1.05 }];
 let CUR_MAP = 0, SEL_MAP = 0, CT = 0;
 const PERKS = [
-  { ic: '💰', n: 'ธุรกิจรุ่ง', d: 'รายได้ +15%', k: 'inc', v: 1.15 }, { ic: '🛠', n: 'ซ่อมบำรุงดี', d: 'ค่าเดินเครื่อง −15%', k: 'cost', v: .85 },
-  { ic: '🛡', n: 'ระบบนิรภัย', d: 'โอกาสระเบิด −20%', k: 'haz', v: .8 }, { ic: '🏙', n: 'ประหยัดไฟ', d: 'ดีมานด์เมือง −6%', k: 'dem', v: .94 },
+  { ic: '💰', n: 'ธุรกิจรุ่ง', d: 'รายได้ +15%', k: 'inc', v: 1.15 }, { ic: '🛠', n: 'ซ่อมบำรุงดี', d: 'ค่าเดินเครื่อง −15%', k: 'cost', v: .85, max: 4 },
+  { ic: '🛡', n: 'ระบบนิรภัย', d: 'โอกาสระเบิด −20%', k: 'haz', v: .8, max: 3 }, { ic: '🏙', n: 'ประหยัดไฟ', d: 'ดีมานด์เมือง −6%', k: 'dem', v: .94, max: 5 },
   { ic: '🔋', n: 'แบตจุเพิ่ม', d: 'ความจุแบต +25%', k: 'bat', v: 1.25 }, { ic: '🎁', n: 'เงินก้อน', d: 'รับ 120 💰 ทันที', cash: 120 }, { ic: '💎', n: 'เงินก้อนใหญ่', d: 'รับ 200 💰 ทันที', cash: 200 }];
 const BOSS = [{ n: '🌪 พายุใหญ่', k: 'dem', v: 1.35 }, { n: '🔥 คลื่นความร้อน', k: 'haz', v: 2.5 }];
 const perkMul = k => ((state && state.perks) || []).reduce((m, p) => p.k === k ? m * p.v : m, 1);
@@ -37,7 +37,7 @@ function showCards(offer) {
 function onWave(w) {
   if (!state) return;
   if (w % 6 === 0) { state.boss = { t: Math.floor(rng() * BOSS.length), left: 20 }; showToast('⚠️ บอส: ' + BOSS[state.boss.t].n + ' นาน 20 วิ!'); fxShake(); }
-  const pool = PERKS.slice(), offer = []; while (offer.length < 3) offer.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+  const pool = PERKS.filter(p => !p.max || stacksOf(p.k) < p.max), offer = []; while (offer.length < 3 && pool.length) offer.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
   showCards(offer);
 }
 function newGoal() {
@@ -63,3 +63,32 @@ wrap('renderGame', (o, a) => {
   let c = byId('goalChip'); if (!c) { c = document.createElement('div'); c.id = 'goalChip'; byId('forecastChip').after(c); }
   const g = state.goal; c.textContent = '🎯 ' + g.lab + ' (' + Math.min(goalVal(g), g.need) + '/' + g.need + ') → +' + g.rew + ' 💰';
 });
+
+/* ---- แท็บการ์ด/สถานะรวม + จัดโซน HUD ---- */
+const stacksOf = k => ((state && state.perks) || []).filter(p => p.k === k).length;
+(function () {
+  const p = document.createElement('div'); p.className = 'panel sheet'; p.id = 'cardsPanel';
+  p.innerHTML = '<div class="sheet-grip"></div><button class="sheet-x" onclick="closeSheets()">✕</button><h3>🎴 การ์ดและสถานะรวม</h3><div id="cardsBody"></div>';
+  document.querySelector('.main-grid').appendChild(p); SHEETS.cards = 'cardsPanel';
+  const b = document.createElement('button'); b.id = 'dock-cards'; b.dataset.k = 'cards'; b.textContent = '🎴 การ์ด'; b.onclick = () => toggleSheet('cards');
+  byId('dock').insertBefore(b, byId('dock-battery'));
+})();
+const pct = m => (m >= 1 ? '+' : '') + Math.round((m - 1) * 100) + '%';
+function renderCards() {
+  const body = byId('cardsBody'); if (!body || !state) return;
+  const rows = PERKS.filter(p => p.k).map(p => {
+    const n = stacksOf(p.k), full = p.max && n >= p.max;
+    return '<div class="crow' + (full ? ' full' : '') + '"><span class="ci">' + p.ic + '</span><div><b>' + p.n + '</b><small>' + p.d + ' ต่อชั้น</small><div class="pips">' +
+      (p.max ? Array.from({ length: p.max }, (_, i) => '<i class="' + (i < n ? 'on' : '') + '"></i>').join('') : '<span>' + n + ' ชั้น (ไม่จำกัด)</span>') +
+      '</div></div><strong>' + (n ? pct(Math.pow(p.v, n)) : '—') + (full ? '<small>เต็ม</small>' : '') + '</strong></div>';
+  }).join('');
+  const inc = perkMul('inc'), cost = perkMul('cost'), haz = perkMul('haz') * bossMul('haz'), dem = perkMul('dem') * bossMul('dem') * mapDem() * (1 + .04 * (state.wave || 0)), bat = perkMul('bat');
+  body.innerHTML = '<div class="sumgrid"><div>💰 รายได้<b>' + pct(inc) + '</b></div><div>🛠 ค่าเดินเครื่อง<b>' + pct(cost) + '</b></div><div>💥 โอกาสระเบิด<b>' + pct(haz) + '</b></div><div>🏙 ดีมานด์เมือง<b>' + pct(dem) + '</b></div><div>🔋 ความจุแบต<b>' + pct(bat) + '</b></div><div>🌊 Wave<b>' + (state.wave || 0) + '</b></div><div>🗺 แผนที่<b>' + curMap().n + '</b></div><div>🔥 คอมโบสูงสุด<b>' + (state.maxStreak || 0) + '</b></div></div><h3>การ์ดที่เลือก</h3>' + rows;
+}
+function hudZones() {
+  if (byId('hudZones') || !byId('hudMeter') || !byId('forecastChip') || !byId('goalChip')) return;
+  const z = document.createElement('div'); z.id = 'hudZones';
+  [['สถานะ', 'hudMeter'], ['สถานการณ์', 'forecastChip'], ['เป้าหมาย', 'goalChip']].forEach(([t, id]) => { const c = document.createElement('div'); c.className = 'zone'; c.innerHTML = '<em>' + t + '</em>'; c.appendChild(byId(id)); z.appendChild(c); });
+  document.querySelector('.status-panel').before(z);
+}
+wrap('renderGame', (o, a) => { o(...a); if (!state) return; hudZones(); if (HUD.open === 'cards') renderCards(); });

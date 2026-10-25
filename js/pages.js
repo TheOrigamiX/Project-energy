@@ -4,25 +4,19 @@ let RESUME = null;
 const goto = (p, o) => { location.href = p + (o ? '?' + new URLSearchParams(o) : ''); };
 const safeNext = n => /^[a-z]+\.html(\?[\w=&%.-]*)?$/i.test(n || '') ? n : 'index.html';
 const hideAll = () => ['startScreen', 'authScreen', 'roomScreen', 'profileScreen', 'leaderboardScreen', 'countdownScreen', 'endScreen'].forEach(i => { const e = byId(i); if (e) e.classList.add('hidden'); });
-const __openRoom = openRoom, __startDaily = startDaily, __startTournament = startTournament, __openLb = openLeaderboard, __closeLb = closeLeaderboard, __restart = restartGame, __leave = leaveRoom, __cancelQ = cancelQueue;
+const __openRoom = openRoom, __openLb = openLeaderboard, __closeLb = closeLeaderboard, __restart = restartGame, __leave = leaveRoom;
 window.openRoom = () => PAGE === 'room' ? __openRoom() : goto('room.html');
-window.startDaily = () => PAGE === 'daily' ? __startDaily() : goto('daily.html');
-window.startTournament = () => PAGE === 'tournament' ? __startTournament() : goto('tournament.html');
 window.openLeaderboard = fe => (PAGE === 'leaderboard' || fe) ? __openLb(fe) : goto('leaderboard.html');
 window.closeLeaderboard = () => PAGE === 'leaderboard' ? goto('index.html') : __closeLb();
 window.restartGame = () => PAGE === 'index' ? __restart() : goto('index.html');
-window.leaveRoom = () => { __leave(); if (PAGE === 'room' || PAGE === 'tournament') goto('index.html'); };
-window.cancelQueue = () => { __cancelQ(); if (PAGE === 'tournament') goto('index.html'); };
+window.leaveRoom = () => { __leave(); if (PAGE === 'room') goto('index.html'); };
 async function onPageReady() {
   byId('authScreen').classList.add('hidden');
   if (PAGE === 'login') { location.replace(safeNext(QS.get('next'))); return; }
   hideAll(); retryPending();
-  if (PAGE === 'index') { byId('startScreen').classList.remove('hidden'); renderMenuBar(); checkResume(); }
+  if (PAGE === 'index') { byId('startScreen').classList.remove('hidden'); renderMenuBar(); checkResume(); dailyBtnSync(); }
   else if (PAGE === 'leaderboard') { try { __openLb(false); } catch (e) { console.warn(e); } }
   else if (PAGE === 'room') { __openRoom(); const c = (QS.get('room') || '').toUpperCase().slice(0, 4); if (c) await joinRoom(c, AUTH.name); }
-  else if (PAGE === 'daily') { if (!(await __startDaily())) setTimeout(() => goto('index.html'), 2500); }
-  else if (PAGE === 'tournament') __startTournament();
-  else if (PAGE === 'solo') { selectedDuration = +QS.get('dur') || 180; SEL_MAP = +QS.get('map') || 0; startGame(); }
 }
 function onSignedOut() {
   hideAll();
@@ -40,7 +34,7 @@ async function retryPending() {
 addEventListener('online', retryPending);
 /* ---- เล่นต่อ ---- */
 function saveSnap() {
-  try { if (!gameInProgress || !state || state.prepping || ROOM.code) return; localStorage.setItem(SNAP, JSON.stringify({ t: Date.now(), uid: PID, state, sel: selectedDuration, tt: TOTAL_TIME, efm: EVENT_FREQ_MULT, map: CUR_MAP, run: RUN, daily: DAILY, seed: DAILY_SEED })); } catch (e) {}
+  try { if (!gameInProgress || !state || state.prepping || ROOM.code) return; const snap = { t: Date.now(), uid: PID, state, sel: selectedDuration, tt: TOTAL_TIME, efm: EVENT_FREQ_MULT, map: CUR_MAP, run: RUN, daily: DAILY, seed: DAILY_SEED }; localStorage.setItem(SNAP, JSON.stringify(snap)); if (DAILY && RUN && Date.now() - (saveSnap.ts || 0) > 10000) { saveSnap.ts = Date.now(); SB.rpc('save_snapshot', { p_run: RUN.run, p_snap: snap }); } } catch (e) {}
 }
 addEventListener('pagehide', saveSnap); document.addEventListener('visibilitychange', () => { if (document.hidden) saveSnap(); });
 wrap('endGame', (o, a) => { localStorage.removeItem(SNAP); return o(...a); });

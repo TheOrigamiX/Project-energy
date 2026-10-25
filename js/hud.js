@@ -40,11 +40,11 @@ function hudStrip() {
 }
 function hudRender() {
   if (HUD.st !== state) { HUD.st = state; HUD.prevMoney = undefined; }
-  byId('dock').classList.toggle('hidden', !gameInProgress);
+  byId('dock').classList.toggle('hidden', !gameInProgress); byId('bellBtn').classList.toggle('hidden', !gameInProgress);
   let m = byId('hudMeter');
   if (!m) { m = document.createElement('div'); m.id = 'hudMeter'; m.innerHTML = '<div class="hm-bar"><i id="hmFill"></i><b></b></div><span id="hmTxt"></span>'; document.querySelector('.status-panel').before(m);
     const f = document.createElement('div'); f.id = 'forecastChip'; m.after(f);
-    const al = document.createElement('div'); al.id = 'alertBar'; f.after(al); }
+    const al = document.createElement('div'); al.id = 'alertBar'; document.body.appendChild(al); }
   const sup = state.netSupply || 0, dem = state.demand || 1, ok = sup >= dem;
   byId('hmFill').style.width = Math.min(100, sup / dem / 1.5 * 100) + '%'; m.classList.toggle('bad', !ok);
   byId('hmTxt').textContent = '⚡ ผลิต ' + sup + ' / ต้องการ ' + dem + ' MW — ' + (ok ? 'ไฟพอ' : 'ขาด ' + (dem - sup) + ' MW');
@@ -68,12 +68,12 @@ function waveBanner(w) {
 }
 wrap('showToast', (o, a) => {
   const bar = byId('alertBar'); if (!gameInProgress || !bar || !state) return o(...a);
-  const e = document.createElement('div'); e.className = 'alert-item'; e.textContent = a[0]; bar.prepend(e);
+  const e = document.createElement('div'); e.className = 'alert-item ' + notifKind(a[0]); e.textContent = a[0]; bar.prepend(e); NOTIFS.unshift({ t: Date.now(), m: a[0], k: notifKind(a[0]) }); NOTIFS.length = Math.min(NOTIFS.length, 20);
   while (bar.children.length > 3) bar.lastChild.remove();
   setTimeout(() => { e.classList.add('out'); setTimeout(() => e.remove(), 400); }, 5000);
 });
 function hudHide() {
-  closeSheets(); byId('dock').classList.add('hidden'); byId('sosBtn').classList.add('hidden'); byId('liveRank').classList.add('hidden');
+  closeSheets(); byId('bellBtn').classList.add('hidden'); byId('notifLog').classList.add('hidden'); byId('dock').classList.add('hidden'); byId('sosBtn').classList.add('hidden'); byId('liveRank').classList.add('hidden');
   const f = byId('flowSvg'); if (f) f.innerHTML = '';
   document.querySelectorAll('.fx-float,.wave-banner').forEach(e => e.remove());
   const al = byId('alertBar'); if (al) al.innerHTML = '';
@@ -97,3 +97,9 @@ function hudUnlock() {
   document.querySelectorAll('.buy-btn.afford').forEach(x => { if (!x.textContent.startsWith('✓')) x.prepend('✓ '); });
   document.querySelectorAll('.buy-btn:disabled').forEach(x => { const m = x.textContent.match(/(\d+)\D*$/); if (m) x.style.setProperty('--p', Math.min(1, state.money / +m[1])); });
 }
+
+const NOTIFS = [], notifKind = m => /🚨|⚠|💥|🔥|ระเบิด|ไฟดับ/.test(m) ? 'bad' : /✅|🎯|🔓|🏅|⭐|🎁|🏆|\+\d+ XP|✓/.test(m) ? 'ok' : 'info';
+(function () {
+  const b = document.createElement('button'), l = document.createElement('div'); b.id = 'bellBtn'; b.textContent = '🔔'; b.className = 'hidden'; l.id = 'notifLog'; l.className = 'hidden'; document.body.append(b, l);
+  b.onclick = () => { l.classList.toggle('hidden'); l.innerHTML = ''; NOTIFS.forEach(n => { const d = document.createElement('div'); d.className = 'alert-item ' + n.k; d.textContent = new Date(n.t).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '  ' + n.m; l.appendChild(d); }); if (!NOTIFS.length) l.textContent = 'ยังไม่มีการแจ้งเตือน'; };
+})();
