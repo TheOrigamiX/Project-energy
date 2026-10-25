@@ -1,5 +1,5 @@
 /* โปรไฟล์/รอบเล่น: ทุกอย่างบันทึกและตรวจฝั่งเซิร์ฟเวอร์ (RPC: start_run / submit_run) */
-let DAILY = false, RUN = null;
+let DAILY = false, RUN = null, DAILY_SEED = 0;
 const lvOf = x => Math.floor(Math.sqrt(x / 80)) + 1;
 const LEAGUES = [[600, '💎 ไดมอนด์'], [300, '🥇 โกลด์'], [100, '🥈 ซิลเวอร์'], [0, '🥉 บรอนซ์']];
 const leagueOf = t => LEAGUES.find(l => t >= l[0])[1];
@@ -18,15 +18,18 @@ async function submitRun() {
     if (error) throw error; AUTH.p = data.profile;
     showToast(data.score === 0 && sc > 0 ? '⚠️ คะแนนผิดปกติ ไม่ถูกบันทึก' : '+' + data.gained + ' XP');
     if (lvOf(AUTH.p.xp) > lvOf(old.xp)) levelUp(lvOf(AUTH.p.xp)); renderMenuBar();
-  } catch (e) { showToast('บันทึกผลไม่สำเร็จ: ' + e.message); }
+  } catch (e) {
+    if (/fetch|network|load failed/i.test(e.message || '')) { try { localStorage.setItem('voltrushPending', JSON.stringify({ run: run.run, score: Math.round(currentScore()), wave: (state && state.wave) || 0, elapsed: (state && state.elapsed) | 0, streak: (state && state.maxStreak) || 0 })); } catch (x) {} showToast('เน็ตหลุด จะส่งผลให้ใหม่เมื่อกลับมาออนไลน์'); }
+    else showToast('บันทึกผลไม่สำเร็จ: ' + e.message);
+  }
 }
 async function startDaily() {
-  const r = await beginRun('daily', 180); if (!r) return;
+  const r = await beginRun('daily', 180); if (!r) return false;
   let h = 0; for (const c of r.day) h = (h * 31 + c.charCodeAt(0)) | 0;
-  DAILY = true; rng = mulberry32(h >>> 0); CUR_MAP = (h >>> 0) % MAPS.length; selectedDuration = 180; startGame();
+  DAILY = true; DAILY_SEED = h >>> 0; rng = mulberry32(h >>> 0); CUR_MAP = (h >>> 0) % MAPS.length; selectedDuration = 180; startGame(); return true;
 }
 wrap('startGame', (o, a) => {
-  if (!DAILY) { if (!ROOM.code) { rng = Math.random; CUR_MAP = SEL_MAP; } beginRun(ROOM.code ? (ROOM.data && ROOM.data.tournament ? 'tour' : 'room') : 'solo', Number(selectedDuration) || 0); }
+  if (!DAILY && !RESUME) { if (!ROOM.code) { rng = Math.random; CUR_MAP = SEL_MAP; } beginRun(ROOM.code ? (ROOM.data && ROOM.data.tournament ? 'tour' : 'room') : 'solo', Number(selectedDuration) || 0); }
   return o(...a);
 });
 wrap('endGame', (o, a) => { const r = o(...a); submitRun(); if (!ROOM.code) rng = Math.random; return r; });
@@ -41,5 +44,5 @@ function renderMenuBar() {
   const sa = document.querySelector('#startScreen .start-actions'), pb = document.createElement('div'), ms = document.createElement('div');
   pb.id = 'profileBar'; pb.onclick = () => openProfileScreen('me'); ms.id = 'mapSel'; sa.before(pb, ms);
   const mk = (t, f, c) => { const b = document.createElement('button'); b.className = c; b.textContent = t; b.onclick = f; sa.appendChild(b); };
-  mk('🏆 Tournament (สุ่มคู่แข่ง)', () => startTournament(), 'primary-btn'); mk('📅 Daily Challenge', startDaily, 'secondary-btn');
+  mk('🏆 Tournament (สุ่มคู่แข่ง)', () => startTournament(), 'primary-btn'); mk('📅 Daily Challenge', () => startDaily(), 'secondary-btn');
 })();

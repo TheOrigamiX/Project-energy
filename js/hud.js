@@ -57,7 +57,8 @@ function hudRender() {
   const fc = byId('forecastChip'), pk = state.peakActive ? '⚡ Peak เหลือ ' + state.peakTimer + ' วิ' : '⏱ Peak อีก ' + state.nextPeakIn + ' วิ';
   fc.textContent = pk + '  •  🌦 อากาศเปลี่ยนอีก ' + state.nextWeatherIn + ' วิ  •  🌊 Wave ' + (state.wave || 0) + '  •  ' + curMap().n + (state.boss ? '  •  ' + BOSS[state.boss.t].n + ' ' + state.boss.left + ' วิ' : '');
   fc.classList.toggle('hot', !!state.peakActive || state.nextPeakIn <= 5);
-  hudStrip(); fxFlow();
+  hudStrip(); fxFlow(); hudUnlock();
+  if (!ROOM.code && (state.elapsed | 0) % 3 === 0) saveSnap();
 }
 wrap('renderGame', (o, a) => { o(...a); if (state) hudRender(); });
 
@@ -77,4 +78,22 @@ function hudHide() {
   document.querySelectorAll('.fx-float,.wave-banner').forEach(e => e.remove());
   const al = byId('alertBar'); if (al) al.innerHTML = '';
   if (typeof hideCards === 'function') hideCards(); const gc = byId('goalChip'); if (gc) gc.remove();
+}
+
+function hudUnlock() {
+  const aff = [];
+  PLANT_DEFS.forEach(d => { const p = state.plants[d.key]; if (d.key !== 'battery' && p && !p.unlocked && state.money >= d.cost) aff.push(d); });
+  if (state.battery && !state.battery.unlocked && state.money >= BATTERY_DEF.cost) aff.push({ key: 'battery', name: BATTERY_DEF.name || 'แบตเตอรี่', icon: '🔋' });
+  const now = new Set(aff.map(d => d.key));
+  if (HUD.affSt !== state) { HUD.affSt = state; HUD.aff = now; }
+  aff.forEach(d => {
+    if (HUD.aff.has(d.key)) return;
+    showToast('🔓 ปลดล็อก ' + (d.icon || '') + ' ' + d.name + ' ได้แล้ว!'); if (typeof sndUpgrade === 'function') sndUpgrade();
+    const b = byId('dock-plants'); if (b) { const r = b.getBoundingClientRect(); fxBurst(r.left + r.width / 2, r.top, 24, ['#ffe3a3', '#b5f0cf', '#fff']); }
+  });
+  HUD.aff = now;
+  const b = byId('dock-plants');
+  if (b) { let s = b.querySelector('.bdg'); if (!s) { s = document.createElement('i'); s.className = 'bdg'; b.appendChild(s); } s.textContent = aff.length || ''; s.classList.toggle('on', aff.length > 0); b.classList.toggle('has-aff', aff.length > 0); }
+  document.querySelectorAll('.buy-btn.afford').forEach(x => { if (!x.textContent.startsWith('✓')) x.prepend('✓ '); });
+  document.querySelectorAll('.buy-btn:disabled').forEach(x => { const m = x.textContent.match(/(\d+)\D*$/); if (m) x.style.setProperty('--p', Math.min(1, state.money / +m[1])); });
 }

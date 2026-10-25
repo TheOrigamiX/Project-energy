@@ -22,6 +22,7 @@ document.body.insertAdjacentHTML('beforeend', `
   <input id="aPass" class="room-input" type="password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)">
   <input id="aPass2" class="room-input hidden" type="password" placeholder="ยืนยันรหัสผ่าน">
   <div id="aCaptcha" class="cap"></div>
+  <button id="capRetry" class="link hidden" onclick="capMount()">↻ โหลด CAPTCHA ใหม่</button>
   <div id="aMsg" class="auth-msg"></div>
   <button id="aGo" class="primary-btn">เข้าสู่ระบบ</button>
   <button id="aForgot" class="link">ลืมรหัสผ่าน?</button>
@@ -39,10 +40,21 @@ let regMode = false, capToken = '', capId = null;
 const capOn = () => !!TURNSTILE_SITE_KEY;
 function capOk() { if (!capOn() || capToken) return true; authMsg('รอสักครู่ กำลังยืนยันตัวตน (CAPTCHA)...'); return false; }
 function capReset() { capToken = ''; if (capOn() && window.turnstile && capId !== null) try { turnstile.reset(capId); } catch (e) {} }
-if (capOn()) {
-  let n = 0; const iv = setInterval(() => {
-    if (window.turnstile) { clearInterval(iv); capId = turnstile.render('#aCaptcha', { sitekey: TURNSTILE_SITE_KEY, theme: 'dark', callback: t => { capToken = t; authMsg(''); }, 'expired-callback': () => { capToken = ''; }, 'error-callback': () => { capToken = ''; authMsg('โหลด CAPTCHA ไม่สำเร็จ ลองรีเฟรชหน้า'); } }); }
-    else if (++n > 50) { clearInterval(iv); authMsg('โหลด CAPTCHA ไม่ได้ ตรวจอินเทอร์เน็ต/โดเมนที่ตั้งใน Cloudflare'); }
+function capMount() {
+  if (!capOn()) return; capToken = '';
+  const box = byId('aCaptcha'), sc = byId('authScreen'); if (!box || !sc || sc.classList.contains('hidden')) return;
+  clearInterval(capMount.iv); let n = 0; byId('capRetry').classList.add('hidden');
+  capMount.iv = setInterval(() => {
+    if (window.turnstile) {
+      clearInterval(capMount.iv);
+      try { if (capId !== null) turnstile.remove(capId); } catch (e) {}
+      box.innerHTML = '';
+      capId = turnstile.render(box, { sitekey: TURNSTILE_SITE_KEY, theme: 'dark', appearance: 'always', retry: 'auto', 'refresh-expired': 'auto',
+        callback: t => { capToken = t; byId('capRetry').classList.add('hidden'); authMsg(''); },
+        'expired-callback': () => { capToken = ''; }, 'timeout-callback': () => { capToken = ''; },
+        'error-callback': c => { capToken = ''; authMsg('CAPTCHA error ' + c + ' — กด "โหลด CAPTCHA ใหม่"'); byId('capRetry').classList.remove('hidden'); } });
+      setTimeout(() => { if (!capToken && !box.querySelector('iframe')) { authMsg('CAPTCHA ไม่ขึ้น (Safari/ตัวบล็อก?) — กด "โหลด CAPTCHA ใหม่"'); byId('capRetry').classList.remove('hidden'); } }, 6000);
+    } else if (++n > 60) { clearInterval(capMount.iv); authMsg('โหลดสคริปต์ CAPTCHA ไม่ได้ ตรวจอินเทอร์เน็ต/ตัวบล็อก'); byId('capRetry').classList.remove('hidden'); }
   }, 200);
 }
 const authMsg = (t, ok) => { const m = byId('aMsg'); m.textContent = t; m.className = 'auth-msg' + (ok ? ' ok' : ''); };
@@ -83,15 +95,15 @@ async function onAuth(ev, sess) {
     if (AUTH.user && AUTH.user.id === sess.user.id) { AUTH.user = sess.user; return; }
     AUTH.user = sess.user; PID = sess.user.id;
     try { await loadMe(); } catch (e) { authMsg('โหลดโปรไฟล์ไม่สำเร็จ: ' + e.message + ' (รัน supabase.sql แล้วหรือยัง?)'); return; }
-    byId('authScreen').classList.add('hidden'); if (!gameInProgress && !ROOM.code) byId('startScreen').classList.remove('hidden');
+    onPageReady();
     listenInvites(); renderMenuBar();
   } else if (ev === 'SIGNED_OUT' || ev === 'INITIAL_SESSION') {
     AUTH.user = null; PID = ''; AUTH.p = null;
-    ['startScreen', 'profileScreen', 'roomScreen'].forEach(i => byId(i).classList.add('hidden')); byId('authScreen').classList.remove('hidden');
+    onSignedOut();
   }
 }
-byId('startScreen').classList.add('hidden'); byId('authScreen').classList.remove('hidden');
-if (SB) SB.auth.onAuthStateChange((ev, sess) => setTimeout(() => onAuth(ev, sess), 0)); else authMsg('เชื่อม Supabase ไม่ได้ ตรวจ js/config.js');
+byId('startScreen').classList.add('hidden'); if ((document.body.dataset.page || 'index') === 'login') byId('authScreen').classList.remove('hidden');
+if (SB) addEventListener('load', () => SB.auth.onAuthStateChange((ev, sess) => setTimeout(() => onAuth(ev, sess), 0))); else authMsg('เชื่อม Supabase ไม่ได้ ตรวจ js/config.js');
 /* ---------- หน้าโปรไฟล์ ---------- */
 function openProfileScreen(tab) { ['startScreen', 'roomScreen'].forEach(i => byId(i).classList.add('hidden')); byId('profileScreen').classList.remove('hidden'); renderPS(tab || 'me'); }
 function closeProfileScreen() { byId('profileScreen').classList.add('hidden'); byId(ROOM.code ? 'roomScreen' : 'startScreen').classList.remove('hidden'); renderMenuBar(); }
@@ -168,7 +180,7 @@ function showInvite(n, code) {
   const old = byId('inviteBox'); if (old) old.remove();
   const b = document.createElement('div'); b.id = 'inviteBox'; const t = document.createElement('span'); t.textContent = '📨 ' + n + ' ชวนเข้าห้อง ' + code;
   const y = document.createElement('button'); y.className = 'primary-btn'; y.textContent = 'เข้าร่วม';
-  y.onclick = async () => { b.remove(); if (ROOM.code) leaveRoom(); await joinRoom(code, AUTH.name); ['startScreen', 'profileScreen'].forEach(i => byId(i).classList.add('hidden')); byId('roomScreen').classList.remove('hidden'); };
+  y.onclick = async () => { b.remove(); if (PAGE !== 'room') { goto('room.html', { room: code }); return; } if (ROOM.code) leaveRoom(); await joinRoom(code, AUTH.name); ['startScreen', 'profileScreen'].forEach(i => byId(i).classList.add('hidden')); byId('roomScreen').classList.remove('hidden'); };
   const x = document.createElement('button'); x.className = 'secondary-btn'; x.textContent = '✕'; x.onclick = () => b.remove(); b.append(t, y, x); document.body.appendChild(b); setTimeout(() => b.remove(), 20000);
 }
 document.querySelector('#roomLobby .start-actions').insertAdjacentHTML('afterbegin', '<button class="secondary-btn" onclick="openProfileScreen(\'friends\')">👥 เชิญเพื่อน</button>');

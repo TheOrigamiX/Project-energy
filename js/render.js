@@ -185,7 +185,7 @@ function renderPlantsPanel() {
         '<div class="card-top"><div class="info"><span class="icon">🔒</span><div><div class="name">' + def.name + riskTag + '</div></div></div>' +
         '<button class="info-btn" onclick="openInfo(\'' + def.key + '\')">ⓘ</button></div>' +
         '<div class="card-bottom"><div class="output">ต้องปลดล็อกก่อน</div>' +
-        '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'' + def.key + '\')">ปลดล็อก · ' + def.cost + '฿</button>' +
+        '<button class="buy-btn' + (afford ? ' afford' : '') + '" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'' + def.key + '\')">ปลดล็อก · ' + def.cost + '฿</button>' +
         '</div></div>';
     }
   });
@@ -213,7 +213,7 @@ function renderPlantsPanel() {
     html += '<div class="battery-card locked">' +
       '<div class="battery-top"><div class="info"><span class="icon">🔒</span><div><div class="name">แบตเตอรี่ ESS</div></div></div>' +
       '<button class="info-btn" onclick="openInfo(\'battery\')">ⓘ</button></div>' +
-      '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'battery\')">ปลดล็อก · ' + BATTERY_DEF.cost + '฿</button>' +
+      '<button class="buy-btn' + (afford ? ' afford' : '') + '" ' + (afford ? '' : 'disabled') + ' onclick="buyPlant(\'battery\')">ปลดล็อก · ' + BATTERY_DEF.cost + '฿</button>' +
       '</div>';
   }
   if (container.dataset.h !== html) { container.innerHTML = html; container.dataset.h = html; }
@@ -255,7 +255,7 @@ function renderCityUpgrade() {
   document.getElementById('cityProgressFill').style.width = Math.min(100, (state.money / cost) * 100) + '%';
 
   const el = document.getElementById('cityUpgradeRow');
-  el.innerHTML = '<button class="buy-btn" ' + (afford ? '' : 'disabled') + ' onclick="upgradeCity()">อัพเกรดเป็น "' + getCityTitle(state.cityLevel + 1) + '" · ' + cost + '฿</button>';
+  el.innerHTML = '<button class="buy-btn' + (afford ? ' afford' : '') + '" ' + (afford ? '' : 'disabled') + ' onclick="upgradeCity()">อัพเกรดเป็น "' + getCityTitle(state.cityLevel + 1) + '" · ' + cost + '฿</button>';
 }
 
 function spawnScorePopup(delta) {

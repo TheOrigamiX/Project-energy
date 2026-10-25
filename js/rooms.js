@@ -79,7 +79,7 @@ function renderLive(r){
   el.innerHTML='<b>🏁 อันดับสด</b>'+Object.values(r.players||{}).sort((a,b)=>liveOf(b,r)-liveOf(a,r)).slice(0,5).map((p,i)=>'<div><em>'+(i+1)+'. '+esc(p.name)+'</em><span>'+liveOf(p,r)+'</span></div>').join('');
 }
 function copyRoom(){
-  const u=location.origin+location.pathname+'?room='+ROOM.code;
+  const u=location.origin+location.pathname.replace(/[^/]*$/,'')+'room.html?room='+ROOM.code;
   (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>showToast('คัดลอกลิงก์แล้ว'),()=>showToast(u));
 }
 function leaveRoom(){
@@ -105,4 +105,4 @@ renderGame=function(){
   if(ROOM.code&&!state.prepping&&state.elapsed%2===0&&state.elapsed!==ROOM.lastPush){ROOM.lastPush=state.elapsed;ROOM.ref.child('players/'+PID+'/live').set(currentScore());if(ROOM.data)renderLive(ROOM.data);}
 };
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('switch')){e.preventDefault();e.target.click();}});
-(function(){const q=new URLSearchParams(location.search).get('room');if(q){openRoom();byId('roomCode').value=q.slice(0,4);}})();
+
