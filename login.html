@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VoltRush — เข้าสู่ระบบ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/effects.css">
+<link rel="stylesheet" href="css/hud.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+</head>
+<body data-page="login">
+
+<div id="skyBackground" class="hidden">
+  <div id="skyGradient"></div>
+  <div id="windLayer"></div>
+  <div id="starsLayer"></div>
+  <div id="celestialSun">☀️</div>
+  <div id="celestialMoon">🌙</div>
+</div>
+
+
+<div id="startScreen" class="screen">
+  <div class="start-card">
+    <h1>⚡ VoltRush</h1>
+    <p class="subtitle">เกมจำลองบริหารพลังงานเมือง เล่นสบายๆ อัพเกรดโรงไฟฟ้าและเมืองได้ไม่จำกัดระดับ</p>
+
+    <div class="duration-select">
+      <div class="duration-label">⏱️ เลือกเวลาเล่น</div>
+      <div class="duration-options" id="durationOptions">
+        <button class="dur-btn selected" data-sec="180" onclick="selectDuration(180)">3 นาที</button>
+        <button class="dur-btn" data-sec="300" onclick="selectDuration(300)">5 นาที</button>
+        <button class="dur-btn" data-sec="600" onclick="selectDuration(600)">10 นาที</button>
+        <button class="dur-btn" data-sec="1800" onclick="selectDuration(1800)">30 นาที</button>
+        <button class="dur-btn" data-sec="0" onclick="selectDuration(0)">∞ ไม่จำกัดเวลา</button>
+      </div>
+    </div>
+
+    
+    <div class="plant-legend">
+      <div class="legend-chip">🏭 ถ่านหิน</div><div class="legend-chip">🔥 ก๊าซธรรมชาติ</div><div class="legend-chip">☀️ โซลาร์</div>
+      <div class="legend-chip">💨 กังหันลม</div><div class="legend-chip">🌊 พลังน้ำ</div><div class="legend-chip">🌋 ความร้อนใต้พิภพ</div>
+      <div class="legend-chip">🌾 ชีวมวล</div><div class="legend-chip">🌀 คลื่น/น้ำขึ้นน้ำลง</div><div class="legend-chip">☢️ นิวเคลียร์</div>
+      <div class="legend-chip">💠 ไฮโดรเจน</div><div class="legend-chip">⚛️ ฟิวชัน (อนาคต)</div><div class="legend-chip">🔋 แบตเตอรี่</div>
+    </div>
+
+    <div class="rules-box">
+      <h3>📋 กติกาเกม</h3>
+      <ul>
+        <li>เมื่อเริ่มเกม จะมี <b>บทเรียนพาชี้จุดจริงในเกม</b> ก่อน (ข้ามได้) แล้วมี <b>เวลาเตรียมตัว</b> ให้เปิด/ซื้อโรงไฟฟ้าล่วงหน้าก่อนนาฬิกาจริงเริ่มเดิน</li>
+        <li>เปิด/ปิดโรงไฟฟ้าด้วย <b>สวิตช์</b> ให้กำลังผลิตตามความต้องการของเมืองให้ทัน</li>
+        <li>แผงสถานะแสดงเหตุการณ์ปัจจุบัน → ถัดไป พร้อมนับถอยหลังตลอดเวลา และบางครั้งจะมี <b>เหตุการณ์พิเศษ</b> ทั้งดีและร้ายเกิดขึ้นแบบสุ่ม (ปรับความถี่ได้ด้านบน)</li>
+        <li>โรงไฟฟ้าขั้นสูงบางประเภทเสี่ยงเกิด<b>เหตุฉุกเฉิน</b> ต้องรีบปิดให้ทัน ไม่งั้นเกมจบทันที และโรงไฟฟ้าทุกประเภทอาจหยุดชั่วคราวหรือกำลังลดลงแบบสุ่มได้</li>
+        <li>อันดับคะแนนแยกตามเวลาเล่น และแยกช่วง วันนี้ / สัปดาห์นี้ / ตลอดกาล</li>
+      </ul>
+    </div>
+
+    <div class="start-actions">
+        <button class="secondary-btn room-btn" onclick="openRoom()">🎮 เล่นกับเพื่อน / ทัวร์นาเมนต์</button>
+      <button class="primary-btn" onclick="startGame()">🚀 เริ่มเกม</button>
+    </div>
+    <div class="start-actions" style="margin-top:10px;">
+      <button class="secondary-btn" onclick="openLeaderboard(false)">🏆 ดูอันดับคะแนน</button>
+    </div>
+  </div>
+</div>
+
+<div id="leaderboardScreen" class="screen hidden">
+  <div class="start-card">
+    <h1>🏆 อันดับคะแนนสูงสุด</h1>
+    <p class="subtitle">เลือกโหมดเวลาและช่วงเวลาเพื่อดูอันดับ</p>
+    <div class="duration-options" id="lbDurationTabs">
+      <button class="dur-btn" data-sec="180" onclick="selectLbDuration(180)">3 นาที</button>
+      <button class="dur-btn" data-sec="300" onclick="selectLbDuration(300)">5 นาที</button>
+      <button class="dur-btn" data-sec="600" onclick="selectLbDuration(600)">10 นาที</button>
+      <button class="dur-btn" data-sec="1800" onclick="selectLbDuration(1800)">30 นาที</button>
+      <button class="dur-btn" data-sec="0" onclick="selectLbDuration(0)">∞ ไม่จำกัดเวลา</button>
+    </div>
+    <div class="duration-options" id="lbPeriodTabs" style="margin-top:10px;">
+      <button class="dur-btn selected" data-period="all" onclick="selectLbPeriod('all')">🏆 ตลอดกาล</button>
+      <button class="dur-btn" data-period="daily" onclick="selectLbPeriod('daily')">📅 วันนี้</button>
+      <button class="dur-btn" data-period="weekly" onclick="selectLbPeriod('weekly')">🗓️ สัปดาห์นี้</button>
+    </div>
+    <div class="lb-reset-countdown hidden" id="lbResetCountdown"></div>
+    <div class="leaderboard" style="margin-top:16px;">
+      <ol id="lbViewList"></ol>
+    </div>
+    <button class="secondary-btn" onclick="closeLeaderboard()">⬅ กลับ</button>
+  </div>
+</div>
+
+<div id="countdownScreen" class="screen hidden">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<div id="gameScreen" class="screen hidden">
+  <div id="gameShell">
+    <div class="sticky-header">
+    <div class="top-bar">
+      <div class="timer-block">
+        <div class="clock-ring" id="clockRing" style="--clock-pct:100;--clock-color:#ffb347;">
+          <div class="clock-ring-inner" id="timerText">3:00</div>
+        </div>
+        <button class="env-chip" id="soundToggleBtn" onclick="toggleSound()" style="cursor:pointer;border:none;font-size:1rem;">🔊</button>
+        <button class="env-chip" id="musicToggleBtn" onclick="toggleMusic()" style="cursor:pointer;border:none;font-size:1rem;">🎵</button>
+        <button class="secondary-btn hidden" id="skipPrepBtn" onclick="skipPrep()">▶️ เริ่มเกมทันที</button>
+        <button class="secondary-btn hidden" id="stopBtn" onclick="manualEndGame()">⏹ จบเกม</button>
+      </div>
+      <div class="env-indicators">
+        <div class="env-chip"><span id="dayNightIcon">☀️</span><span id="dayNightText">กลางวัน</span></div>
+        <div class="env-chip"><span id="weatherIcon">🌤️</span><span id="weatherText">อากาศแจ่มใส</span></div>
+        <div class="env-chip" id="moneyChip">💰 <span id="moneyVal">300</span> บาท</div>
+      </div>
+      <div class="env-chip" id="scoreChip">คะแนน: <span id="scoreTopVal">0</span></div>
+    </div>
+
+    <div class="panel status-panel">
+      <h3>🔔 สถานะและการแจ้งเตือน</h3>
+      <div class="status-tray" id="statusTray"></div>
+    </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel" id="plantsPanel">
+        <h3>🎛️ แผงควบคุมโรงไฟฟ้า</h3>
+        <div class="panel-hint">👆 สวิตช์ = เปิด/ปิด • ⓘ = รายละเอียด • ⬆️ = อัพเกรด</div>
+        <div class="plants-money-bar" id="moneyChipPanel">💰 เงินสำหรับซื้อ/อัพเกรด: <span id="moneyValPanel">300</span> บาท</div>
+        <div class="panel-scroll"><div id="plantsContainer"></div></div>
+      </div>
+
+      <div class="panel" id="cityPanel">
+        <h3>🏙️ สถานะเมือง</h3>
+        <div class="city-level-label" id="cityLevelLabel">หมู่บ้านเล็ก</div>
+        <div class="city-visual" id="cityVisual">🏠🏡🏠</div>
+        <div class="city-stats-row">
+          <div class="city-stat-chip">📈 ดีมานด์ ×<span id="cityDemandMultVal">1.0</span></div>
+          <div class="city-stat-chip">🏆 คะแนน ×<span id="cityScoreMultVal">1.0</span></div>
+          <div class="city-stat-chip" id="gridEffChip">⚡ <span id="gridEffVal">100%</span></div>
+        </div>
+        <div class="gauge-section" id="gaugeSection">
+          <div class="power-gauge" id="powerGauge" style="--gauge-pct:0;--gauge-color:#ff6b6b;">
+            <div class="power-gauge-inner">
+              <div class="power-gauge-pct"><span id="gaugePctNum">0</span>%</div>
+              <div class="power-gauge-label">ประสิทธิภาพ</div>
+            </div>
+          </div>
+          <div class="gauge-substats">
+            <div>⚡ ผลิตได้ <b><span id="gaugeSupplyNum">0</span> MW</b></div>
+            <div>🏙️ ต้องการ <b><span id="gaugeDemandNum">0</span> MW <span class="demand-trend" id="demandTrend"></span></b></div>
+          </div>
+          <div class="gauge-diff" id="gaugeDiff"><span id="gaugeDiffNum">+0</span> MW <span id="gaugeDiffLabel">เหลือ</span></div>
+        </div>
+        <div class="city-progress-label" id="cityProgressLabel">เงินสะสมสำหรับอัพเกรดถัดไป</div>
+        <div class="city-progress-track"><div class="city-progress-fill" id="cityProgressFill" style="width:0%"></div></div>
+        <div class="city-upgrade-row" id="cityUpgradeRow"></div>
+      </div>
+
+      <div class="panel" id="statsPanel">
+        <h3>📊 สถิติภาพรวม</h3>
+        <div class="stat-row">
+          <div class="label"><span>🌫️ Carbon Footprint</span><span id="carbonVal">0</span></div>
+          <div class="meter-track"><div class="meter-fill" id="carbonFill" style="width:0%"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>🌱 สัดส่วนพลังงานสะอาด</span><span><span id="cleanNum">0</span>%</span></div>
+          <div class="meter-track"><div class="meter-fill" id="cleanFill" style="width:0%"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>คะแนนรวม</span></div>
+          <div class="big-score" id="scoreVal">0</div>
+        </div>
+        <div class="stat-row">
+          <div class="label"><span>📈 อัตราคะแนน/วินาที</span></div>
+          <div class="score-rate-breakdown" id="scoreRateBreakdown">
+            <div>😊 พอใจ <b id="rateSatisfaction">—</b></div>
+            <div>🌱 สะอาด <b id="rateClean">—</b></div>
+            <div>🌫️ คาร์บอน <b id="rateCarbon">—</b></div>
+            <div id="rateBlackoutRow" class="hidden">⚠️ ไฟดับ <b id="rateBlackout">—</b></div>
+          </div>
+        </div>
+        <div class="blackout-count">⚠️ ไฟดับไปแล้ว <span id="blackoutCountVal">0</span> ครั้ง</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="detailOverlay" class="modal-overlay hidden" onclick="if(event.target===this) closeInfo()">
+  <div class="modal-card">
+    <div id="modalContent"></div>
+    <div class="pause-note">⏸️ เกมหยุดชั่วคราวอยู่</div>
+    <button class="secondary-btn" onclick="closeInfo()">▶️ เล่นต่อ</button>
+  </div>
+</div>
+
+<div id="coachSpotlight" class="hidden"></div>
+<div id="coachTooltip" class="hidden">
+  <div id="coachTitle">หัวข้อ</div>
+  <div id="coachBody">คำอธิบาย</div>
+  <div class="coach-actions">
+    <button class="secondary-btn" onclick="coachSkip()">ข้ามทั้งหมด</button>
+    <span id="coachProgress">1 / 9</span>
+    <button class="primary-btn" id="coachNextBtn" onclick="coachNext()">ถัดไป ➡</button>
+  </div>
+</div>
+
+<div id="endScreen" class="screen hidden">
+  <div class="end-card">
+    <h1>🏁 จบเกม!</h1>
+    <div id="disasterBanner" class="hidden"></div>
+    <div class="end-score" id="finalScoreVal">0</div>
+    <div class="breakdown">
+      <div><span>😊 ความพึงพอใจของเมือง</span><span id="bdSatisfaction">0</span></div>
+      <div><span>🌱 โบนัสพลังงานสะอาด</span><span id="bdClean">+0</span></div>
+      <div><span>💰 โบนัสเงินคงเหลือ</span><span id="bdMoney">+0</span></div>
+      <div><span>🌫️ หักค่าคาร์บอน</span><span id="bdCarbon">-0</span></div>
+      <div><span>⚠️ หักจากไฟดับ (<span id="bdBlackoutCount">0</span> ครั้ง)</span><span id="bdBlackout">-0</span></div>
+      <div><span>คะแนนสุทธิ</span><span id="bdFinal">0</span></div>
+    </div>
+    <div class="save-row">
+      <input type="text" id="nameInput" placeholder="ใส่ชื่อของคุณ..." maxlength="16">
+      <button class="primary-btn" id="saveScoreBtn" style="padding:10px 22px;font-size:0.92rem;" onclick="saveScore()">บันทึก</button>
+    </div>
+    <div class="leaderboard">
+      <h3>🏆 อันดับคะแนนสูงสุด — <span id="lbDurationLabel">3 นาที</span></h3>
+      <ol id="leaderboardList"></ol>
+    </div>
+    <div class="start-actions">
+      <button class="secondary-btn" onclick="openLeaderboard(true)">📋 ดูอันดับคะแนนทั้งหมด</button>
+      <button class="secondary-btn" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+<div id="liveRank" class="hidden"></div>
+<div id="roomScreen" class="screen hidden"><div class="start-card room-card">
+  <h1>🎮 ห้องเล่นกับเพื่อน</h1>
+  <p class="subtitle">ทุกคนเจอเหตุการณ์ชุดเดียวกัน แข่งกันแฟร์ๆ สะสมแต้มตามอันดับทุกรอบ</p>
+  <div id="roomEntry">
+    <input type="text" id="roomName" class="room-input" placeholder="ชื่อของคุณ" maxlength="16">
+    <div class="room-row"><label>จำนวนรอบ <select id="roomRounds" class="room-input"><option value="1">1</option><option value="3" selected>3</option><option value="5">5</option></select></label>
+    <label>เวลา/รอบ <select id="roomDur" class="room-input"><option value="120">2 นาที</option><option value="180" selected>3 นาที</option><option value="300">5 นาที</option></select></label></div>
+    <button class="primary-btn" onclick="createRoom()">➕ สร้างห้อง</button>
+    <div class="room-or">หรือ</div>
+    <div class="room-row"><input type="text" id="roomCode" class="room-input" placeholder="รหัสห้อง 4 ตัว" maxlength="4" style="text-transform:uppercase"><button class="secondary-btn" onclick="joinRoom()">เข้าห้อง</button></div>
+    <button class="secondary-btn" style="margin-top:12px" onclick="leaveRoom()">⬅ กลับ</button>
+  </div>
+  <div id="roomLobby" class="hidden">
+    <div class="room-code" id="roomCodeBig">----</div>
+    <button class="secondary-btn" onclick="copyRoom()">🔗 คัดลอกลิงก์เชิญเพื่อน</button>
+    <div class="room-info" id="roomInfo"></div>
+    <ol id="roomPlayers" class="room-players"></ol>
+    <div class="room-msg" id="roomMsg"></div>
+    <div class="start-actions">
+      <button class="primary-btn" id="roomStartBtn" onclick="hostStart()">▶ เริ่ม</button>
+      <button class="secondary-btn hidden" id="roomForceBtn" onclick="hostForceEnd()">⏭ จบรอบทันที</button>
+      <button class="secondary-btn" onclick="leaveRoom()">🚪 ออกจากห้อง</button>
+    </div>
+  </div>
+</div></div>
+<div id="toastContainer"></div>
+
+<script src="js/config.js"></script>
+<script src="js/backend.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/render.js"></script>
+<script src="js/leaderboard.js"></script>
+<script src="js/difficulty.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/perks.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/matchmaking.js"></script>
+<script src="js/lb.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/bg.js"></script>
+</body>
+</html>
