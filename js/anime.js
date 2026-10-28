@@ -1,31 +1,30 @@
-/* ตัวละครแนวอนิเมะแบบ SVG (chibi) สร้างจากพารามิเตอร์ สลับเป็นภาพจริงทีหลังได้โดยแก้ charSvg() */
+/* ตัวละครแนวอนิเมะ "จิบิ" แบบ SVG (หัวโต ตัวเล็ก ขอบหนาสไตล์สติกเกอร์) สลับเป็นภาพจริงทีหลังได้โดยแก้ charSvg() */
 let _cu = 0;
 function charSvg(c, o) {
-  o = o || {}; const u = 'c' + (++_cu), sk = c.skin || '#ffe3d2', c2 = c.cloth2 || c.cloth, hair = 'url(#' + u + 'h)', cloth = 'url(#' + u + 'b)';
-  const defs = '<defs><linearGradient id="' + u + 'h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.hair + '"/><stop offset="1" stop-color="' + (c.hair2 || c.hair) + '"/></linearGradient><linearGradient id="' + u + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.cloth + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs>';
+  o = o || {}; const u = 'c' + (++_cu), O = '#3b2a4a', sk = c.skin || '#ffe3d2', c2 = c.cloth2 || c.cloth, hair = 'url(#' + u + 'h)', cloth = 'url(#' + u + 'b)', sw = 'stroke="' + O + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"';
+  const defs = `<defs><linearGradient id="${u}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.hair}"/><stop offset="1" stop-color="${c.hair2 || c.hair}"/></linearGradient><linearGradient id="${u}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.cloth}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`;
   const back = {
-    short: '<path d="M30 54Q60 4 90 54L88 72Q60 62 32 72Z" fill="' + hair + '"/>',
-    bob: '<path d="M26 54Q60 2 94 54L92 94Q60 84 28 94Z" fill="' + hair + '"/>',
-    long: '<path d="M24 54Q60 0 96 54L100 146Q60 156 20 146Z" fill="' + hair + '"/>',
-    twin: '<path d="M30 54Q60 4 90 54L88 72Q60 62 32 72Z" fill="' + hair + '"/><path d="M28 56Q6 78 16 122Q30 106 32 76Z" fill="' + hair + '"/><path d="M92 56Q114 78 104 122Q90 106 88 76Z" fill="' + hair + '"/><circle cx="30" cy="48" r="6" fill="#ff6b81"/><circle cx="90" cy="48" r="6" fill="#ff6b81"/>'
+    short: `<path d="M18 58Q20 10 60 10Q100 10 102 58L98 80Q60 70 22 80Z" fill="${hair}" ${sw}/>`,
+    bob: `<path d="M14 60Q18 6 60 6Q102 6 106 60L104 102Q60 92 16 102Z" fill="${hair}" ${sw}/>`,
+    long: `<path d="M12 60Q16 2 60 2Q104 2 108 60L114 128Q60 142 6 128Z" fill="${hair}" ${sw}/>`,
+    twin: `<path d="M18 58Q20 10 60 10Q100 10 102 58L98 80Q60 70 22 80Z" fill="${hair}" ${sw}/><path d="M20 60Q-8 84 6 126Q26 108 30 80Z" fill="${hair}" ${sw}/><path d="M100 60Q128 84 114 126Q94 108 90 80Z" fill="${hair}" ${sw}/><circle cx="22" cy="46" r="7" fill="#ff6b81" ${sw}/><circle cx="98" cy="46" r="7" fill="#ff6b81" ${sw}/>`
   }[c.style] || '';
-  const cape = c.acc === 'cape' ? '<path d="M34 86L24 152Q60 168 96 152L86 86Z" fill="#6a4fb3"/>' : '';
-  const leg = x => '<g class="lg ' + (x < 60 ? 'l' : 'r') + '" style="transform-origin:' + (x + 6) + 'px 134px"><rect x="' + x + '" y="132" width="12" height="38" rx="6" fill="' + sk + '"/><ellipse cx="' + (x + 6) + '" cy="172" rx="9" ry="5" fill="' + c2 + '"/></g>';
-  const arm = x => '<g class="am ' + (x < 60 ? 'l' : 'r') + '" style="transform-origin:' + (x + 6) + 'px 92px"><rect x="' + x + '" y="88" width="12" height="36" rx="6" fill="' + cloth + '"/><circle cx="' + (x + 6) + '" cy="126" r="6.5" fill="' + sk + '"/></g>';
-  const body = '<rect x="37" y="84" width="46" height="54" rx="17" fill="' + cloth + '"/><path d="M50 84L60 102L70 84Z" fill="#fff" opacity=".9"/><rect x="37" y="118" width="46" height="6" fill="' + c2 + '" opacity=".55"/>' + (c.acc === 'cape' ? '<circle cx="60" cy="112" r="7" fill="#ffd166" stroke="#a97b00" stroke-width="1.5"/>' : '') + (c.acc === 'leaf' ? '<path d="M40 82Q60 96 80 82L80 90Q60 104 40 90Z" fill="#7ad07a"/>' : '');
-  const eye = x => '<ellipse cx="' + x + '" cy="58" rx="7.5" ry="10" fill="#fff"/><ellipse cx="' + x + '" cy="60" rx="5.6" ry="8" fill="' + c.eye + '"/><ellipse cx="' + x + '" cy="60" rx="2.6" ry="4.4" fill="#1b1b2f"/><circle cx="' + (x - 2) + '" cy="55" r="2.6" fill="#fff"/><circle cx="' + (x + 2) + '" cy="64" r="1.2" fill="#fff" opacity=".8"/><path d="M' + (x - 8.5) + ' 51Q' + x + ' 46 ' + (x + 8.5) + ' 51" stroke="#3a2b3f" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
-  const face = '<circle cx="60" cy="54" r="30" fill="' + sk + '"/>' + eye(47) + eye(73) + '<ellipse cx="38" cy="70" rx="6" ry="3.4" fill="#ff8fa3" opacity=".38"/><ellipse cx="82" cy="70" rx="6" ry="3.4" fill="#ff8fa3" opacity=".38"/>' + (c.acc === 'mask' ? '<path d="M36 66Q60 92 84 66L84 82Q60 98 36 82Z" fill="#cfd8e3"/>' : '<path d="M55 73Q60 78 65 73" stroke="#c0576b" stroke-width="2" fill="none" stroke-linecap="round"/>');
-  const front = '<path d="M30 54Q32 18 60 18Q88 18 90 54Q80 36 70 42Q62 30 54 42Q42 34 30 54Z" fill="' + hair + '"/><path d="M30 54Q26 72 32 90Q38 76 36 56Z" fill="' + hair + '"/><path d="M90 54Q94 72 88 90Q82 76 84 56Z" fill="' + hair + '"/>';
+  const cape = c.acc === 'cape' ? `<path d="M38 98L26 134Q60 144 94 134L82 98Z" fill="#6a4fb3" ${sw}/>` : '';
+  const hoodBack = c.acc === 'hood' ? `<path d="M14 62Q60 -26 106 62L106 98Q60 86 14 98Z" fill="#5b8ac0" ${sw}/>` : '';
+  const leg = x => `<g class="lg ${x < 60 ? 'l' : 'r'}" style="transform-origin:${x + 6}px 120px"><rect x="${x}" y="118" width="12" height="16" rx="6" fill="${sk}" ${sw}/><ellipse cx="${x + 6}" cy="134" rx="9" ry="5" fill="${c2}" ${sw}/></g>`;
+  const arm = (x, ox) => `<g class="am ${x < 60 ? 'l' : 'r'}" style="transform-origin:${ox}px 100px"><rect x="${x}" y="98" width="11" height="20" rx="5.5" fill="${cloth}" ${sw}/><circle cx="${x + 5.5}" cy="119" r="5.5" fill="${sk}" ${sw}/></g>`;
+  const body = `<rect x="42" y="94" width="36" height="32" rx="13" fill="${cloth}" ${sw}/><path d="M52 95L60 107L68 95Z" fill="#fff" opacity=".9"/>` + (c.acc === 'cape' ? `<circle cx="60" cy="114" r="5.5" fill="#ffd166" ${sw}/>` : '') + (c.acc === 'leaf' ? `<path d="M42 96Q60 110 78 96L78 104Q60 118 42 104Z" fill="#7ad07a" ${sw}/>` : '');
+  const eye = x => `<ellipse cx="${x}" cy="62" rx="9.5" ry="12.5" fill="#fff"/><ellipse cx="${x}" cy="64" rx="7.4" ry="10.4" fill="${c.eye}"/><ellipse cx="${x}" cy="65" rx="3.6" ry="5.6" fill="#1b1b2f"/><circle cx="${x - 3}" cy="58" r="3.6" fill="#fff"/><circle cx="${x + 3.5}" cy="70" r="1.7" fill="#fff" opacity=".85"/><path d="M${x - 10.5} 52Q${x} 45 ${x + 10.5} 52" stroke="${O}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  const face = `<circle cx="60" cy="56" r="40" fill="${sk}" ${sw}/>` + eye(44) + eye(76) + `<ellipse cx="33" cy="80" rx="7" ry="4" fill="#ff8fa3" opacity=".42"/><ellipse cx="87" cy="80" rx="7" ry="4" fill="#ff8fa3" opacity=".42"/>` + (c.acc === 'mask' ? `<path d="M28 76Q60 110 92 76L92 94Q60 114 28 94Z" fill="#cfd8e3" ${sw}/>` : `<path d="M54 84Q60 90 66 84" stroke="#b84a62" stroke-width="2.6" fill="none" stroke-linecap="round"/>`);
+  const front = `<path d="M18 58Q20 14 60 14Q100 14 102 58Q88 36 74 46Q64 30 54 46Q36 36 18 58Z" fill="${hair}" ${sw}/><path d="M18 58Q12 84 22 106Q32 88 30 62Z" fill="${hair}" ${sw}/><path d="M102 58Q108 84 98 106Q88 88 90 62Z" fill="${hair}" ${sw}/>`;
   const acc = {
-    helmet: '<path d="M30 38Q60 4 90 38L90 44L30 44Z" fill="#ffd84d" stroke="#d99a00"/><rect x="26" y="42" width="68" height="7" rx="3" fill="#f0a500"/>',
-    strawhat: '<ellipse cx="60" cy="30" rx="46" ry="9" fill="#f3d27a"/><path d="M36 30Q60 -2 84 30Z" fill="#f7e29a"/><rect x="36" y="25" width="48" height="5" fill="#e07a3f"/>',
-    glasses: '<circle cx="47" cy="58" r="11" fill="none" stroke="#5b3f9a" stroke-width="2.4"/><circle cx="73" cy="58" r="11" fill="none" stroke="#5b3f9a" stroke-width="2.4"/><path d="M58 58h4" stroke="#5b3f9a" stroke-width="2.4"/>',
-    hood: '<path d="M28 62Q60 -4 92 62L92 84Q60 74 28 84Z" fill="#5b8ac0" opacity=".92"/>' + '',
-    goggles: '<rect x="30" y="28" width="60" height="11" rx="5.5" fill="#455a64"/><circle cx="46" cy="33" r="7" fill="#ff7043" stroke="#263238" stroke-width="2"/><circle cx="74" cy="33" r="7" fill="#ff7043" stroke="#263238" stroke-width="2"/>',
-    diver: '<rect x="30" y="28" width="60" height="10" rx="5" fill="#0277bd"/><circle cx="46" cy="33" r="6.5" fill="#b3e5fc" stroke="#01579b" stroke-width="2"/><circle cx="74" cy="33" r="6.5" fill="#b3e5fc" stroke="#01579b" stroke-width="2"/><path d="M84 40q10-2 6 8q-8-2-6-8Z" fill="#ffccbc"/>',
-    aurora: '<path d="M38 24l22-14 22 14-8 2-14-6-14 6Z" fill="#ffe082" stroke="#ffb300"/><circle cx="60" cy="10" r="3.5" fill="#fff"/><path d="M16 40l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#fff" opacity=".85"/><path d="M104 70l2.5 5 5 2.5-5 2.5-2.5 5-2.5-5-5-2.5 5-2.5Z" fill="#fff" opacity=".7"/>'
+    helmet: `<path d="M22 38Q60 -8 98 38L98 44L22 44Z" fill="#ffd84d" ${sw}/><rect x="14" y="42" width="92" height="9" rx="4.5" fill="#f0a500" ${sw}/>`,
+    strawhat: `<ellipse cx="60" cy="26" rx="58" ry="12" fill="#f3d27a" ${sw}/><path d="M28 26Q60 -14 92 26Z" fill="#f7e29a" ${sw}/><rect x="30" y="21" width="60" height="6" fill="#e07a3f"/>`,
+    glasses: `<circle cx="44" cy="62" r="15" fill="rgba(255,255,255,.15)" stroke="#5b3f9a" stroke-width="3"/><circle cx="76" cy="62" r="15" fill="rgba(255,255,255,.15)" stroke="#5b3f9a" stroke-width="3"/><path d="M58 62h4" stroke="#5b3f9a" stroke-width="3"/>`,
+    goggles: `<rect x="20" y="24" width="80" height="14" rx="7" fill="#455a64" ${sw}/><circle cx="42" cy="31" r="9" fill="#ff7043" ${sw}/><circle cx="78" cy="31" r="9" fill="#ff7043" ${sw}/>`,
+    diver: `<rect x="20" y="24" width="80" height="13" rx="6.5" fill="#0277bd" ${sw}/><circle cx="42" cy="30" r="8.5" fill="#b3e5fc" ${sw}/><circle cx="78" cy="30" r="8.5" fill="#b3e5fc" ${sw}/><path d="M96 42q14-3 8 11q-12-3-8-11Z" fill="#ffccbc" ${sw}/>`,
+    aurora: `<path d="M34 22l26-18 26 18-10 3-16-9-16 9Z" fill="#ffe082" ${sw}/><circle cx="60" cy="6" r="4.5" fill="#fff" ${sw}/><path d="M10 44l3.5 8 8 3.5-8 3.5-3.5 8-3.5-8-8-3.5 8-3.5Z" fill="#fff" opacity=".9"/><path d="M110 74l3 6 6 3-6 3-3 6-3-6-6-3 6-3Z" fill="#fff" opacity=".8"/>`
   }[c.acc] || '';
-  const hoodBack = c.acc === 'hood' ? acc : '';
-  const body_all = '<g class="bob">' + cape + back + hoodBack + leg(45) + leg(63) + body + arm(27) + arm(81) + face + front + (c.acc === 'hood' ? '' : acc) + '</g>';
-  return '<svg class="chsvg' + (o.still ? ' still' : '') + '" viewBox="' + (o.bust ? '8 0 104 118' : '0 0 120 180') + '" xmlns="http://www.w3.org/2000/svg">' + defs + body_all + '</svg>';
+  const all = '<g class="bob">' + cape + back + hoodBack + leg(48) + leg(62) + body + arm(31, 36) + arm(78, 83) + face + front + (c.acc === 'hood' ? '' : acc) + '</g>';
+  return `<svg class="chsvg${o.still ? ' still' : ''}" viewBox="${o.bust ? '6 0 108 112' : '0 0 120 142'}" xmlns="http://www.w3.org/2000/svg">${defs}${all}</svg>`;
 }
