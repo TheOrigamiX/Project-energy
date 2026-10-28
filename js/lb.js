@@ -53,6 +53,7 @@ async function showSaveStat(d, run, sc) {
   const el = byId('saveStat'); if (!el) return;
   if (d.score === 0 && sc > 0) { el.className = 'save-stat bad'; el.textContent = '⚠️ คะแนนผิดปกติ ไม่ถูกบันทึก'; return; }
   const { data: r } = await SB.rpc('my_rank', { p_run: run.run });
+  if (!r) { el.className = 'save-stat ok'; el.textContent = '🧪 รอบทดสอบ ไม่ติดอันดับ (+' + d.gained + ' XP)'; renderLeaderboard(); dailyBtnSync(); return; }
   el.className = 'save-stat ok'; el.textContent = '✓ บันทึกคะแนนแล้ว • อันดับที่ ' + (r ? r.day : '-') + ' ของวันนี้ • อันดับที่ ' + (r ? r.all : '-') + ' ตลอดกาล (+' + d.gained + ' XP)';
   renderLeaderboard(); dailyBtnSync();
 }

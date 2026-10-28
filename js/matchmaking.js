@@ -20,6 +20,6 @@ wrap('onRoom', (o, a) => {
   if (r.host === PID && r.status === 'lobby' && ROOM.auto !== ROOM.code && Object.keys(r.players || {}).length >= r.expect) { ROOM.auto = ROOM.code; setTimeout(hostStart, 2500); }
   if (r.status === 'finished' && ROOM.rew !== ROOM.code) {
     ROOM.rew = ROOM.code;
-    SB.rpc('claim_tournament', { p_code: ROOM.code }).then(({ data, error }) => { if (error) return; AUTH.p = data.profile; showToast('🏆 อันดับ ' + data.rank + '/' + data.n + ' → ถ้วย ' + (data.delta > 0 ? '+' : '') + data.delta); renderMenuBar(); });
+    SB.rpc('claim_tournament', { p_code: ROOM.code }).then(({ data, error }) => { if (error) return; AUTH.p = data.profile; if (data.rank == null) { showToast('🧪 บัญชีทดสอบไม่ได้ถ้วยจาก Tournament'); return; } showToast('🏆 อันดับ ' + data.rank + '/' + data.n + ' → ถ้วย ' + (data.delta > 0 ? '+' : '') + data.delta); renderMenuBar(); });
   }
 });

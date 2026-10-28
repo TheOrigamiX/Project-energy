@@ -9,8 +9,8 @@ const PERKS = [
   { ic: '🛡', n: 'ระบบนิรภัย', d: 'โอกาสระเบิด −20%', k: 'haz', v: .8, max: 3 }, { ic: '🏙', n: 'ประหยัดไฟ', d: 'ดีมานด์เมือง −6%', k: 'dem', v: .94, max: 5 },
   { ic: '🔋', n: 'แบตจุเพิ่ม', d: 'ความจุแบต +25%', k: 'bat', v: 1.25 }, { ic: '🎁', n: 'เงินก้อน', d: 'รับ 120 💰 ทันที', cash: 120 }, { ic: '💎', n: 'เงินก้อนใหญ่', d: 'รับ 200 💰 ทันที', cash: 200 }];
 const BOSS = [{ n: '🌪 พายุใหญ่', k: 'dem', v: 1.35 }, { n: '🔥 คลื่นความร้อน', k: 'haz', v: 2.5 }];
-const perkMul = k => ((state && state.perks) || []).reduce((m, p) => p.k === k ? m * p.v : m, 1);
-const bossMul = k => state && state.boss && BOSS[state.boss.t].k === k ? BOSS[state.boss.t].v : 1;
+const perkMul = k => ((state && state.perks) || []).reduce((m, p) => p.k === k && p.v ? m * p.v : m, 1) * (typeof chMul === 'function' ? chMul(k) : 1);
+const bossMul = k => state && state.boss && BOSS[state.boss.t].k === k ? bossAdj(k, BOSS[state.boss.t].v) : 1;
 const curMap = () => MAPS[(state && state.map != null) ? state.map : CUR_MAP];
 const mapDem = () => curMap().dem;
 wrap('getEffective', (o, a) => {
@@ -19,7 +19,7 @@ wrap('getEffective', (o, a) => {
   if (r.runCost != null) r.runCost = Math.round(r.runCost * perkMul('cost') * 10) / 10;
   return r;
 });
-wrap('getBatteryEffective', (o, a) => { const r = Object.assign({}, o(...a)); if (r.capacity != null) r.capacity = Math.round(r.capacity * perkMul('bat')); return r; });
+wrap('getBatteryEffective', (o, a) => { const r = Object.assign({}, o(...a)); if (r.capacity != null) r.capacity = Math.round(r.capacity * perkMul('bat')); if (r.chargeRate != null) r.chargeRate = Math.round(r.chargeRate * perkMul('charge')); return r; });
 wrap('upgradePlant', (o, a) => { const m = state.money, r = o(...a); if (state.money < m) state.upg = (state.upg || 0) + 1; return r; });
 (function () { const c = document.createElement('div'); c.id = 'cardTray'; c.className = 'hidden'; document.body.appendChild(c); })();
 function hideCards() { clearInterval(CT); byId('cardTray').classList.add('hidden'); }
@@ -48,7 +48,7 @@ function newGoal() {
 }
 const goalVal = g => g.t === 'str' ? (state.streak || 0) : g.t === 'mon' ? Math.round(state.money) : (state.upg || 0);
 function checkGoal() {
-  const g = state.goal; if (goalVal(g) >= g.need) { state.money += g.rew; showToast('🎯 เป้าหมายสำเร็จ! +' + g.rew + ' 💰'); fxConfetti(); state.goal = newGoal(); }
+  const g = state.goal; if (goalVal(g) >= g.need) { state.money += Math.round(g.rew * perkMul('goal')); showToast('🎯 เป้าหมายสำเร็จ! +' + g.rew + ' 💰'); fxConfetti(); state.goal = newGoal(); }
 }
 wrap('gameTick', (o, a) => {
   if (state && !state.prepping) {
