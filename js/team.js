@@ -1,6 +1,6 @@
 /* ล็อบบี้ตัวละครเดิน + หน้าจัดทีม (ตัวหลัก ผู้ช่วย 2 ช่อง เด็ค) */
 (function () {
-  const pl = document.createElement('div'); pl.id = 'petLayer'; document.body.appendChild(pl); const tb = document.createElement('button'); tb.id = 'petTeamBtn'; tb.className = 'secondary-btn'; tb.textContent = '👥 จัดทีม / เปลี่ยนตัวละคร'; tb.onclick = openTeam; document.body.appendChild(tb); renderLobby();
+  const pl = document.createElement('div'); pl.id = 'petLayer'; document.body.appendChild(pl); const tb = document.createElement('button'); tb.id = 'petTeamBtn'; tb.className = 'secondary-btn'; tb.textContent = '👥 จัดทีม / เปลี่ยนตัวละคร'; tb.onclick = openTeam; document.body.appendChild(tb);
   document.body.insertAdjacentHTML('beforeend', '<div id="teamModal" class="hidden"><div class="tm"><h2>👥 จัดทีม</h2><div id="tmMain" class="cgrid"></div><div id="tmDetail" class="tmd"></div><h3>ผู้ช่วย (ได้พาสซีฟ 40% ไม่มีสกิลกด)</h3><div class="row"><select id="tmH1" class="room-input"></select><select id="tmH2" class="room-input"></select></div><div id="tmWarn" class="auth-msg"></div><h3>เด็คการ์ด <span id="tmDeckN"></span></h3><div id="tmDeck" class="dgrid"></div><div class="row"><button class="primary-btn" id="tmSave">บันทึก</button><button class="secondary-btn" id="tmClose">ปิด</button></div></div></div>');
   byId('tmClose').onclick = () => byId('teamModal').classList.add('hidden'); byId('tmSave').onclick = saveTeam;
   ['tmH1', 'tmH2'].forEach((id, i) => byId(id).onchange = e => { CH.T.helpers[i] = e.target.value; if (CH.T.helpers[0] && CH.T.helpers[0] === CH.T.helpers[1]) CH.T.helpers[1 - i] = ''; renderTeam(); });
@@ -66,3 +66,4 @@ function saveTeam() { try { localStorage.setItem(TM_SAVE, JSON.stringify(CH.T));
 
 let TEAM_ROLE = null;
 wrap('renderMenuBar', (o, a) => { o(...a); const r = AUTH.p && AUTH.p.role; if (TEAM_ROLE !== r) { TEAM_ROLE = r; renderLobby(); } });
+try { renderLobby(); } catch (e) { console.error('renderLobby:', e); }
