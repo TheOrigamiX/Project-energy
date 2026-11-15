@@ -387,8 +387,8 @@ function updatePlantOutputs() {
     if (def.type === 'constant') {
       p.output = eff.capacity;
     } else if (def.type === 'solar') {
-      let b = state.isDay ? eff.dayCapacity : eff.dayCapacity * nightSolar();
-      if (state.isDay && state.weather === 'cloudy') b *= stormMit(0.4);
+      let b = state.isDay ? eff.dayCapacity : 0;
+      if (state.isDay && state.weather === 'cloudy') b *= 0.4;
       if (state.activeBuff && state.activeBuff.type === 'solarBoost') b *= 1.6;
       p.output = Math.round(b);
     } else if (def.type === 'wind') {
@@ -402,7 +402,6 @@ function updatePlantOutputs() {
       if (state.activeBuff && state.activeBuff.type === 'windBoost') out *= 1.6;
       p.output = Math.round(out);
     }
-    p.output = Math.round(p.output * outMul(def.key));
     if (p.debuff && p.debuff.type === 'outage') p.output = 0;
     else if (p.debuff && p.debuff.type === 'reduced') p.output = Math.round(p.output * 0.5);
   });
@@ -434,7 +433,7 @@ function checkHazardEvents() {
     const chance = 0.004 * eff.mult * safeMult * Math.sqrt(EVENT_FREQ_MULT) * perkMul('haz') * bossMul('haz') * getCityHazardMult(state.cityLevel) * hazKey(k);
     if (rng() < chance) {
       const def = EVENT_DEFS[k];
-      state.activeHazard = { key: k, timeLeft: def.duration + hazExtra(), def: def };
+      state.activeHazard = { key: k, timeLeft: def.duration, def: def };
       sndHazard();
       showToast(def.warn + ' ' + def.resolve);
     }
@@ -455,12 +454,12 @@ function computeSupply() {
   const beff = getBatteryEffective(b.level);
   let net = gross, cleanFromBattery = 0; state.battCharged = 0;
 
-  if (b.unlocked && b.mode === 'charge' && !wattOn()) {
+  if (b.unlocked && b.mode === 'charge') {
     const surplus = Math.max(0, gross - state.demand);
     const amt = Math.min(beff.chargeRate, beff.capacity - b.current, surplus);
     { const cl = PLANT_DEFS.filter(d => d.carbonRate === 0).reduce((t, d) => t + state.plants[d.key].output, 0); b.clean = (b.clean || 0) + amt * (gross > 0 ? Math.min(1, cl / gross) : 0); } b.current += amt; net = gross - amt; state.battCharged = amt;
-  } else if (b.unlocked && (b.mode === 'discharge' || wattOn())) {
-    const amt = Math.min(beff.dischargeRate * (wattOn() ? 2.5 : 1), b.current);
+  } else if (b.unlocked && b.mode === 'discharge') {
+    const amt = Math.min(beff.dischargeRate, b.current);
     { const share = b.current > 0 ? Math.min(1, (b.clean || 0) / b.current) : 0; cleanFromBattery = amt * share; b.clean = Math.max(0, (b.clean || 0) - cleanFromBattery); } b.current -= amt; net = gross + amt;
   }
   state.netSupply = Math.round(net);
@@ -481,7 +480,7 @@ function updateScoreAndBlackout(cleanFromBattery) {
   const carbon = PLANT_DEFS.reduce((s, def) => {
     const p = state.plants[def.key];
     if (!p.on || !p.unlocked) return s;
-    return s + getEffective(def, p.level).carbonRate * carbKey(def.key);
+    return s + getEffective(def, p.level).carbonRate;
   }, 0);
   const carbonDelta = carbon * 0.3 * scoreMult * perkMul('carbon');
   state.breakdown.carbonPenalty += carbonDelta;
