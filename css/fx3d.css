@@ -1,0 +1,192 @@
+/* =====================================================================
+   VoltRush — fx3d.css
+   แกนพลังงาน 3D + ฉากเมือง 3D + หน้า Settings + Credit
+   ออกแบบและพัฒนาโดย นาย นันทภพ หนูประดับ / Nanthapop Nupradub
+   ทุกอย่างควบคุมผ่านแอตทริบิวต์บน <html> ที่ js/settings.js ตั้งให้
+     data-fx  = off | low | high      (ระดับเอฟเฟกต์)
+     data-d3  = on | off              (ฉาก 3D ที่ใช้จริง)
+     data-ptr = on | off              (เอฟเฟกต์ตามเมาส์/นิ้วที่ใช้จริง)
+   ===================================================================== */
+
+:root {
+  --vr-amber: #ffe3a3;
+  --vr-pink: #ffa8b5;
+  --vr-sky: #9bd7ff;
+  --vr-mint: #b5f0cf;
+  --vr-lav: #cdb8ff;
+  --vr-panel: rgba(12, 18, 34, .98);
+  --vr-line: rgba(120, 160, 255, .28);
+}
+
+/* ---------- 1) แกนพลังงาน 3D (ชิ้นเด่นของหน้าแรก) ---------- */
+.vr-core {
+  position: relative; width: 132px; height: 132px; margin: 2px auto 12px;
+  perspective: 620px; pointer-events: none;
+  animation: vrArrive 1.1s cubic-bezier(.2, .9, .25, 1.15) both;
+}
+@keyframes vrArrive {
+  from { opacity: 0; transform: translateY(18px) scale(.55); }
+  to   { opacity: 1; transform: none; }
+}
+.vr-scene {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: rotateX(calc(-16deg + var(--vr-rx, 0deg))) rotateY(var(--vr-ry, 0deg));
+  transition: transform .3s ease-out;
+}
+.vr-spin {
+  position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+  transform-style: preserve-3d; animation: vrSpin 16s linear infinite;
+}
+@keyframes vrSpin { to { transform: rotateY(360deg); } }
+
+.vr-cube { position: absolute; left: 0; top: 0; transform-style: preserve-3d; animation: vrTumble 9s ease-in-out infinite alternate; }
+@keyframes vrTumble {
+  from { transform: rotateX(-20deg) rotateZ(0deg); }
+  to   { transform: rotateX(35deg) rotateZ(25deg); }
+}
+.vr-cube i {
+  position: absolute; left: -22px; top: -22px; width: 44px; height: 44px;
+  display: grid; place-items: center; font-style: normal; font-size: 22px; line-height: 1;
+  border: 1.5px solid rgba(255, 227, 163, .75);
+  background: linear-gradient(135deg, rgba(255, 227, 163, .30), rgba(155, 215, 255, .16));
+  box-shadow: inset 0 0 14px rgba(255, 227, 163, .35), 0 0 12px rgba(255, 200, 120, .25);
+}
+.vr-cube i:nth-child(1) { transform: translateZ(22px); }
+.vr-cube i:nth-child(2) { transform: rotateY(180deg) translateZ(22px); }
+.vr-cube i:nth-child(3) { transform: rotateY(90deg) translateZ(22px); }
+.vr-cube i:nth-child(4) { transform: rotateY(-90deg) translateZ(22px); }
+.vr-cube i:nth-child(5) { transform: rotateX(90deg) translateZ(22px); }
+.vr-cube i:nth-child(6) { transform: rotateX(-90deg) translateZ(22px); }
+
+.vr-ring { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 2px solid; transform-style: preserve-3d; }
+.vr-ring::after {
+  content: ''; position: absolute; left: 50%; top: -5px; width: 8px; height: 8px; margin-left: -4px;
+  border-radius: 50%; background: currentColor; box-shadow: 0 0 10px 2px currentColor;
+}
+.vr-ring.r1 { width: 96px; height: 96px; margin: -48px 0 0 -48px; color: var(--vr-sky); border-color: rgba(155, 215, 255, .8); animation: vrR1 7s linear infinite; }
+.vr-ring.r2 { width: 120px; height: 120px; margin: -60px 0 0 -60px; color: var(--vr-pink); border-color: rgba(255, 168, 181, .7); animation: vrR2 11s linear infinite; }
+.vr-ring.r3 { width: 74px; height: 74px; margin: -37px 0 0 -37px; color: var(--vr-mint); border-color: rgba(181, 240, 207, .75); animation: vrR3 5s linear infinite reverse; }
+@keyframes vrR1 { from { transform: rotateX(72deg) rotateZ(0deg); } to { transform: rotateX(72deg) rotateZ(360deg); } }
+@keyframes vrR2 { from { transform: rotateY(72deg) rotateZ(0deg); } to { transform: rotateY(72deg) rotateZ(360deg); } }
+@keyframes vrR3 { from { transform: rotateX(-55deg) rotateY(35deg) rotateZ(0deg); } to { transform: rotateX(-55deg) rotateY(35deg) rotateZ(360deg); } }
+
+.vr-floor {
+  position: absolute; left: 50%; bottom: -6px; width: 112px; height: 18px; margin-left: -56px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 200, 120, .5), rgba(255, 200, 120, 0));
+  filter: blur(3px); animation: vrPulse 3s ease-in-out infinite;
+}
+@keyframes vrPulse { 0%, 100% { opacity: .55; transform: scaleX(.85); } 50% { opacity: 1; transform: scaleX(1.1); } }
+
+/* ระดับต่ำ: เหลือวงแหวนเดียว หมุนช้าลง */
+html[data-fx="low"] .vr-ring.r2, html[data-fx="low"] .vr-ring.r3 { display: none; }
+html[data-fx="low"] .vr-spin { animation-duration: 26s; }
+html[data-fx="low"] .vr-floor { animation: none; opacity: .8; }
+html[data-d3="off"] .vr-core { display: none; }
+
+/* ---------- 2) เมืองเป็นฉาก 3D ในเกม ---------- */
+html[data-d3="on"] .city-visual { position: relative; }
+html[data-d3="on"] .city-visual:not(.blackout) {
+  transform-origin: 50% 100%;
+  transform: perspective(520px) rotateX(10deg);
+}
+html[data-d3="on"][data-fx="high"] .city-visual:not(.blackout) { animation: vrCity 9s ease-in-out infinite; }
+@keyframes vrCity {
+  0%, 100% { transform: perspective(520px) rotateX(10deg) rotateY(-5deg); }
+  50%      { transform: perspective(520px) rotateX(10deg) rotateY(5deg); }
+}
+html[data-d3="on"] .city-visual::after {
+  content: ''; position: absolute; left: 8%; right: 8%; bottom: 2px; height: 8px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(155, 215, 255, .45), rgba(155, 215, 255, 0)); filter: blur(4px); pointer-events: none;
+}
+html[data-d3="on"][data-fx="high"] #countdownNum {
+  text-shadow: 0 0 28px rgba(255, 227, 163, .7), 0 0 70px rgba(155, 215, 255, .45);
+}
+
+/* ---------- 3) ปิดเอฟเฟกต์ทั้งหมด ---------- */
+html[data-fx="off"] #fxCanvas, html[data-fx="off"] #flowSvg, html[data-fx="off"] #cursorGlow, html[data-fx="off"] .click-ring { display: none !important; }
+html[data-fx="off"] *, html[data-fx="off"] *::before, html[data-fx="off"] *::after {
+  animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important;
+}
+html[data-ptr="off"] #cursorGlow, html[data-ptr="off"] .click-ring { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .vr-spin, .vr-cube, .vr-ring, .vr-floor, .vr-core { animation: none !important; }
+}
+
+/* ---------- 4) ปุ่มเฟือง ---------- */
+.vr-gear {
+  position: fixed; left: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 880;
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.15rem; cursor: pointer;
+  color: #fff; background: rgba(14, 20, 38, .9); border: 1px solid var(--vr-line); backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45); transition: transform .35s cubic-bezier(.3, 1.4, .5, 1), border-color .2s;
+}
+.vr-gear:hover, .vr-gear:focus-visible { transform: rotate(80deg); border-color: var(--vr-amber); }
+.vr-gear-top { cursor: pointer; border: none; font-size: 1rem; }
+body:has(#gameScreen:not(.hidden)) #vrGear { display: none; }
+
+/* ---------- 5) หน้าต่าง Settings ---------- */
+#vrSettings {
+  position: fixed; inset: 0; z-index: 1100; display: none; align-items: center; justify-content: center;
+  padding: 14px; background: rgba(4, 7, 16, .66); backdrop-filter: blur(4px);
+}
+#vrSettings.on { display: flex; animation: vrFade .2s ease both; }
+@keyframes vrFade { from { opacity: 0; } to { opacity: 1; } }
+.vr-card {
+  width: min(430px, 100%); max-height: min(86vh, 720px); overflow: auto; overscroll-behavior: contain;
+  background: var(--vr-panel); border: 1px solid var(--vr-line); border-radius: 22px; padding: 18px 18px 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6); color: #e8eefc;
+  animation: vrSpring .42s cubic-bezier(.2, 1.1, .3, 1.05) both;
+}
+@keyframes vrSpring { from { opacity: 0; transform: translateY(24px) scale(.94); } to { opacity: 1; transform: none; } }
+.vr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.vr-head h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--vr-amber); }
+.vr-x {
+  width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; font-size: 1rem; color: #fff;
+  background: rgba(255, 255, 255, .12); transition: background .2s;
+}
+.vr-x:hover { background: rgba(255, 255, 255, .22); }
+.vr-card h3 { margin: 16px 0 6px; font-size: .86rem; font-weight: 700; color: #9fb3d1; letter-spacing: .3px; }
+.vr-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+.vr-row:last-of-type { border-bottom: none; }
+.vr-lab { font-size: .92rem; font-weight: 600; }
+.vr-sub { display: block; margin-top: 2px; font-size: .72rem; font-weight: 400; color: #7f93b8; line-height: 1.35; }
+
+.vr-sw {
+  position: relative; flex: none; width: 50px; height: 30px; border-radius: 15px; border: none; cursor: pointer;
+  background: rgba(255, 255, 255, .16); transition: background .25s;
+}
+.vr-sw::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transition: transform .28s cubic-bezier(.3, 1.5, .5, 1);
+}
+.vr-sw[aria-checked="true"] { background: linear-gradient(135deg, var(--vr-mint), var(--vr-sky)); }
+.vr-sw[aria-checked="true"]::after { transform: translateX(20px); }
+
+.vr-seg { display: flex; flex: none; padding: 3px; gap: 2px; border-radius: 12px; background: rgba(255, 255, 255, .08); }
+.vr-seg button {
+  border: none; cursor: pointer; padding: 7px 13px; border-radius: 9px; font: inherit; font-size: .82rem; font-weight: 700;
+  color: #b9c7e4; background: transparent; transition: background .2s, color .2s;
+}
+.vr-seg button[aria-pressed="true"] { color: #1a1208; background: linear-gradient(135deg, var(--vr-amber), #ffb4a2); }
+
+.vr-reset {
+  width: 100%; margin-top: 12px; padding: 11px; border-radius: 12px; border: 1px solid var(--vr-line); cursor: pointer;
+  font: inherit; font-size: .86rem; font-weight: 700; color: #e8eefc; background: rgba(255, 255, 255, .06);
+}
+.vr-reset:hover { background: rgba(255, 255, 255, .12); }
+.vr-gear:focus-visible, .vr-x:focus-visible, .vr-sw:focus-visible, .vr-seg button:focus-visible, .vr-reset:focus-visible {
+  outline: 2px solid var(--vr-sky); outline-offset: 2px;
+}
+
+/* ---------- 6) Credit ---------- */
+.vr-about { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .08); text-align: center; font-size: .78rem; color: #8ea2c6; line-height: 1.55; }
+.vr-about b { display: block; font-size: .95rem; color: var(--vr-amber); font-weight: 800; }
+.vr-credit { margin: 14px 0 0; text-align: center; font-size: .7rem; line-height: 1.5; color: #7f93b8; }
+.vr-credit b { color: #b9c7e4; font-weight: 700; }
+
+@media (max-width: 480px) {
+  .vr-core { width: 112px; height: 112px; transform-origin: 50% 50%; }
+  .vr-card { padding: 16px 14px 12px; }
+}
