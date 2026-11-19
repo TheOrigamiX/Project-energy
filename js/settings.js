@@ -11,6 +11,20 @@
   const CREDIT_TH = 'นาย นันทภพ หนูประดับ';
   const CREDIT_EN = 'Nanthapop Nupradub';
   const root = document.documentElement;
+  const SCRIPT_SRC = document.currentScript && document.currentScript.src;
+
+  /* ---------- ตรวจว่า fx3d.css โหลดแล้วหรือยัง ถ้ายังให้พยายามโหลดเองจากโฟลเดอร์ css/ ข้างๆ js/ ---------- */
+  const cssOK = () => getComputedStyle(root).getPropertyValue('--vr-amber').trim() !== '';
+  const CSS_URL = SCRIPT_SRC ? new URL('../css/fx3d.css', SCRIPT_SRC).href : 'css/fx3d.css';
+  const status = { cssLoaded: false, cssUrl: CSS_URL };
+  function ensureCss(done) {
+    if (cssOK()) { status.cssLoaded = true; return done(true); }
+    const l = document.createElement('link');
+    l.rel = 'stylesheet'; l.href = CSS_URL;
+    l.onload = () => { status.cssLoaded = cssOK(); done(status.cssLoaded); };
+    l.onerror = () => { status.cssLoaded = false; done(false); };
+    document.head.appendChild(l);
+  }
 
   /* ---------- ค่าเริ่มต้น: เครื่องช้าหรือเปิดโหมดลดการเคลื่อนไหว จะเริ่มที่ระดับเบาลง ---------- */
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -73,6 +87,7 @@
       const core = document.createElement('div');
       core.className = 'vr-core';
       core.setAttribute('aria-hidden', 'true');
+      core.style.display = 'none';
       core.innerHTML = '<div class="vr-floor"></div><div class="vr-scene"><div class="vr-spin">' +
         '<div class="vr-cube"><i>⚡</i><i>⚡</i><i>⚡</i><i>⚡</i><i>⚡</i><i>⚡</i></div>' +
         '<b class="vr-ring r1"></b><b class="vr-ring r2"></b><b class="vr-ring r3"></b></div></div>';
@@ -191,6 +206,8 @@
     if (!document.getElementById('vrGear')) {
       const g = document.createElement('button');
       g.id = 'vrGear'; g.type = 'button'; g.className = 'vr-gear'; g.setAttribute('aria-label', 'ตั้งค่า'); g.textContent = '⚙️';
+      g.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:880;width:44px;height:44px;border-radius:50%;' +
+        'border:1px solid rgba(120,160,255,.4);background:rgba(14,20,38,.92);color:#fff;font-size:18px;cursor:pointer;padding:0';
       g.addEventListener('click', openSettings);
       document.body.appendChild(g);
     }
@@ -212,5 +229,12 @@
 
   mountStartDecor();
   mountGears();
-  window.VoltRushSettings = { open: openSettings, close: closeSettings, get: () => Object.assign({}, S) };
+  ensureCss(ok => {
+    document.querySelectorAll('.vr-core').forEach(c => { if (ok) c.style.display = ''; });
+    if (!ok) console.warn('[VoltRush] โหลด fx3d.css ไม่สำเร็จ (' + CSS_URL + ') — ตรวจว่าอัปโหลดไฟล์ css/fx3d.css แล้วและ deploy ครบ ปุ่มตั้งค่ายังใช้ได้ แต่ภาพ 3D จะไม่แสดง');
+  });
+  window.VoltRushSettings = {
+    open: openSettings, close: closeSettings, get: () => Object.assign({}, S),
+    diag: () => ({ cssLoaded: status.cssLoaded, cssUrl: CSS_URL, scriptSrc: SCRIPT_SRC, gear: !!document.getElementById('vrGear'), core: !!document.querySelector('.vr-core'), fx: root.dataset.fx, d3: root.dataset.d3 })
+  };
 })();
